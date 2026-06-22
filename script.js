@@ -31,7 +31,7 @@ let gameActive = false;
 let heartbeatStarted = false;
 
 /* SNAPSHOTS */
-const snapshots = []; // stores base64 dataURLs of cropped box snapshots
+window.snapshots = []; // window scope zodat je het makkelijk kunt debuggen in console
 
 /* =========================
    DOM
@@ -150,7 +150,7 @@ readyBtn.addEventListener("click", () => {
 });
 
 /* =========================
-   OBSERVERS FIXED SYSTEM
+   OBSERVERS
 ========================= */
 function spawnObservers() {
     const img = document.createElement("img");
@@ -196,10 +196,7 @@ async function startWebcamGame() {
 
     gameScreen.style.display = "block";
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-        video: true
-    });
-
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
     webcamVideo.srcObject = stream;
 
     gameActive = false;
@@ -225,7 +222,6 @@ function startPreGameCountdown() {
 
         if (timeLeft <= 0) {
             clearInterval(countdown);
-
             preGameOverlay.style.display = "none";
             startActualGame();
         }
@@ -248,7 +244,6 @@ function startActualGame() {
 
     dodgeBox.style.left = x + "px";
     dodgeBox.style.top = y + "px";
-
     dodgeBox.style.display = "flex";
 
     moveBox();
@@ -275,13 +270,11 @@ function startRounds() {
         if (!heartbeatStarted) {
             heartbeatSound.loop = true;
             heartbeatSound.volume = 0.2;
-
             heartbeatSound.play().catch(() => {
                 document.addEventListener("click", () => {
                     heartbeatSound.play().catch(() => {});
                 }, { once: true });
             });
-
             heartbeatStarted = true;
         }
 
@@ -298,9 +291,7 @@ function startRounds() {
 
             if (timeLeft <= 0) {
                 clearInterval(countdown);
-
                 snapshotSequence();
-
                 round++;
                 nextRound();
             }
@@ -317,35 +308,31 @@ function startRounds() {
 function snapshotSequence() {
 
     flash.style.opacity = "1";
-
     shutterSound.currentTime = 0;
     shutterSound.play();
 
     gameActive = false;
 
+    // Sla de boxRect OP op het moment van de flash (niet 250ms later)
+    const boxRect = dodgeBox.getBoundingClientRect();
+
     setTimeout(() => {
 
-        // Haal de positie en grootte van het dodgeBox op
-        const boxRect = dodgeBox.getBoundingClientRect();
+        // Volledige webcamframe tekenen
+        canvas.width = webcamVideo.videoWidth || 640;
+        canvas.height = webcamVideo.videoHeight || 480;
+        ctx.drawImage(webcamVideo, 0, 0, canvas.width, canvas.height);
 
-        // Stel canvas in op volledige webcamvideo grootte
-        canvas.width = webcamVideo.videoWidth;
-        canvas.height = webcamVideo.videoHeight;
+        // Schaalverhouding scherm → videoresolutie
+        const scaleX = canvas.width / window.innerWidth;
+        const scaleY = canvas.height / window.innerHeight;
 
-        // Teken de volledige webcamframe eerst
-        ctx.drawImage(webcamVideo, 0, 0);
+        const cropX = Math.max(0, boxRect.left * scaleX);
+        const cropY = Math.max(0, boxRect.top * scaleY);
+        const cropW = Math.min(boxRect.width * scaleX, canvas.width - cropX);
+        const cropH = Math.min(boxRect.height * scaleY, canvas.height - cropY);
 
-        // Bereken de schaalverhouding van video vs. scherm
-        const scaleX = webcamVideo.videoWidth / window.innerWidth;
-        const scaleY = webcamVideo.videoHeight / window.innerHeight;
-
-        // Crop-coördinaten in videoresolutie
-        const cropX = boxRect.left * scaleX;
-        const cropY = boxRect.top * scaleY;
-        const cropW = boxRect.width * scaleX;
-        const cropH = boxRect.height * scaleY;
-
-        // Maak een aparte canvas voor de crop
+        // Crop canvas
         const cropCanvas = document.createElement("canvas");
         cropCanvas.width = cropW;
         cropCanvas.height = cropH;
@@ -357,8 +344,10 @@ function snapshotSequence() {
             0, 0, cropW, cropH
         );
 
-        // Sla op als dataURL
-        snapshots.push(cropCanvas.toDataURL("image/jpeg", 0.85));
+        const dataURL = cropCanvas.toDataURL("image/jpeg", 0.85);
+        window.snapshots.push(dataURL);
+
+        console.log(`Snapshot ${window.snapshots.length} opgeslagen`, cropW, cropH);
 
         flash.style.opacity = "0";
 
@@ -407,7 +396,6 @@ function endGame() {
 
     gameActive = false;
     heartbeatSound.pause();
-
     dodgeBox.style.display = "none";
 
     startShutdownTransition();
@@ -440,12 +428,9 @@ function showShutdownScreen() {
     document.body.classList.add("glitch");
 
     setTimeout(() => {
-
         document.body.classList.remove("glitch");
-
         shutdownScreen.style.display = "flex";
         shutdownScreen.classList.remove("hidden");
-
     }, 2000);
 }
 
@@ -453,9 +438,7 @@ function showShutdownScreen() {
    READ MESSAGE
 ========================= */
 readMessageBtn.addEventListener("click", () => {
-
     shutdownScreen.style.display = "none";
-
     startOthersExperience();
 });
 
@@ -465,7 +448,6 @@ function startOthersExperience() {
     othersIndex = 0;
 
     experience.style.display = "flex";
-
     othersEyeLogo.classList.remove("hidden");
 
     playOthersVideo(othersIndex);
@@ -486,7 +468,11 @@ function playOthersVideo(index) {
 
     // theothers_02.mov = index 1 → polaroids spawnen
     if (index === 1) {
-        spawnPolaroidsDuringVideo();
+        // Wacht tot duration bekend is via loadedmetadata
+        mainVideo.addEventListener("loadedmetadata", function onMeta() {
+            mainVideo.removeEventListener("loadedmetadata", onMeta);
+            spawnPolaroidsDuringVideo();
+        });
     }
 
     // theothers_04.mov = index 3 → polaroids weghalen
@@ -498,33 +484,38 @@ function playOthersVideo(index) {
 /* =========================
    POLAROID SYSTEEM
 ========================= */
-
-// Posities die het midden vermijden (center = 30-70% x én 25-75% y)
 function getRandomPolaroidPosition() {
-    const pw = 180; // breedte polaroid (px)
-    const ph = 170; // hoogte polaroid (px)
+    const pw = 180;
+    const ph = 170;
     const W = window.innerWidth;
     const H = window.innerHeight;
 
-    // Definieer het middenvak dat we vermijden
-    const midX1 = W * 0.28;
-    const midX2 = W * 0.72;
-    const midY1 = H * 0.22;
-    const midY2 = H * 0.78;
+    // Middenvak vermijden (waar de video speelt)
+    const midX1 = W * 0.10;
+    const midX2 = W * 0.90;
+    const midY1 = H * 0.15;
+    const midY2 = H * 0.85;
 
-    let x, y, attempts = 0;
+    // Kies een van de 4 hoekzones
+    const zones = [
+        // links boven
+        { x: [20, W * 0.22], y: [20, H * 0.40] },
+        // rechts boven
+        { x: [W * 0.78, W - pw - 20], y: [20, H * 0.40] },
+        // links onder
+        { x: [20, W * 0.22], y: [H * 0.60, H - ph - 20] },
+        // rechts onder
+        { x: [W * 0.78, W - pw - 20], y: [H * 0.60, H - ph - 20] },
+        // boven midden
+        { x: [W * 0.35, W * 0.65 - pw], y: [20, H * 0.14] },
+        // onder midden
+        { x: [W * 0.35, W * 0.65 - pw], y: [H * 0.86, H - ph - 20] },
+    ];
 
-    do {
-        // Random positie over het hele scherm
-        x = Math.random() * (W - pw);
-        y = Math.random() * (H - ph);
-        attempts++;
-    } while (
-        // Zolang in het middengebied én max 30 pogingen
-        x + pw > midX1 && x < midX2 &&
-        y + ph > midY1 && y < midY2 &&
-        attempts < 30
-    );
+    const zone = zones[Math.floor(Math.random() * zones.length)];
+
+    const x = zone.x[0] + Math.random() * Math.max(0, zone.x[1] - zone.x[0]);
+    const y = zone.y[0] + Math.random() * Math.max(0, zone.y[1] - zone.y[0]);
 
     return { x, y };
 }
@@ -544,7 +535,7 @@ function spawnPolaroid(dataURL, labelIndex) {
     el.appendChild(img);
     el.appendChild(label);
 
-    const rot = (Math.random() * 20 - 10).toFixed(1); // -10° tot +10°
+    const rot = (Math.random() * 20 - 10).toFixed(1);
     el.style.setProperty("--rot", rot + "deg");
 
     const { x, y } = getRandomPolaroidPosition();
@@ -552,34 +543,37 @@ function spawnPolaroid(dataURL, labelIndex) {
     el.style.top = y + "px";
 
     polaroidOverlay.appendChild(el);
+
+    console.log(`Polaroid ${labelIndex + 1} gespawnd op`, x, y);
 }
 
 function spawnPolaroidsDuringVideo() {
 
-    // Wacht tot video speelt, dan gooi ze één voor één
-    // Verdeel ze gelijkmatig over de duur van theothers_02
+    console.log("spawnPolaroidsDuringVideo gestart, snapshots:", window.snapshots.length);
+
+    if (window.snapshots.length === 0) {
+        console.warn("Geen snapshots beschikbaar!");
+        return;
+    }
 
     let polaroidIndex = 0;
-    let initialized = false;
+    const duration = mainVideo.duration;
+
+    // Verdeel over de video: 10%, 22%, 35%, 50%, 63%, 76%
+    const spawnFractions = [0.10, 0.22, 0.35, 0.50, 0.63, 0.76];
 
     function onTimeUpdate() {
 
-        if (!initialized) {
-            initialized = true;
-        }
-
-        if (polaroidIndex >= snapshots.length) {
+        if (polaroidIndex >= window.snapshots.length) {
             mainVideo.removeEventListener("timeupdate", onTimeUpdate);
             return;
         }
 
-        const duration = mainVideo.duration || 30;
-        // Spawn op vaste intervallen: 15%, 25%, 38%, 52%, 65%, 80% van de video
-        const spawnPoints = [0.12, 0.24, 0.37, 0.50, 0.63, 0.78];
-        const t = mainVideo.currentTime / duration;
+        const fraction = mainVideo.currentTime / duration;
+        const targetFraction = spawnFractions[polaroidIndex];
 
-        if (t >= spawnPoints[polaroidIndex]) {
-            spawnPolaroid(snapshots[polaroidIndex], polaroidIndex);
+        if (fraction >= targetFraction) {
+            spawnPolaroid(window.snapshots[polaroidIndex], polaroidIndex);
             polaroidIndex++;
         }
     }

@@ -61,12 +61,13 @@ body{
 }
 
 /* LOGO */
-.logo-container{
-    position:absolute;
-    top:5vh;
-    left:50%;
-    transform:translateX(-50%);
-    z-index:100;
+.logo-container {
+    position: absolute;
+    top: 5vh;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    pointer-events: none; /* ← dit was het fingerprint-probleem */
 }
 
 #logoVideo{
