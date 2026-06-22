@@ -37,9 +37,13 @@ const flash = document.getElementById("flash");
 const heartbeatSound = document.getElementById("heartbeatSound");
 const shutterSound = document.getElementById("shutterSound");
 
+const MIN_SIZE = 18;
+const MAX_SIZE = 38;
+
+let heartbeatStarted = false;
 
 /* =========================
-   START EXPERIENCE
+   START
 ========================= */
 fingerprint.addEventListener("click", () => {
     startScreen.style.display = "none";
@@ -47,9 +51,8 @@ fingerprint.addEventListener("click", () => {
     playVideo(currentVideo);
 });
 
-
 /* =========================
-   PLAY VIDEO
+   VIDEO
 ========================= */
 function playVideo(index){
 
@@ -58,24 +61,15 @@ function playVideo(index){
     mainVideo.src = videos[index];
     mainVideo.load();
 
-    mainVideo.oncanplay = () => {
-        mainVideo.play();
-    };
+    mainVideo.oncanplay = () => mainVideo.play();
 
-    mainVideo.onended = () => {
-        continueBtn.style.display = "block";
-    };
+    mainVideo.onended = () => continueBtn.style.display = "block";
 
     observersSpawned = false;
-
-    if (index === videos.length - 1) {
-        setupObserverSpawns();
-    }
 }
 
-
 /* =========================
-   CONTINUE BUTTON
+   CONTINUE
 ========================= */
 continueBtn.addEventListener("click", () => {
 
@@ -91,64 +85,28 @@ continueBtn.addEventListener("click", () => {
     }
 });
 
-
 /* =========================
-   OBSERVERS SYSTEM
-========================= */
-function spawnObservers() {
-    const img = document.createElement("img");
-    img.src = "images/observers.png";
-    img.classList.add("observer");
-
-    img.style.left = Math.random() * 100 + "%";
-    img.style.top = Math.random() * 100 + "%";
-
-    overlay.appendChild(img);
-}
-
-function setupObserverSpawns() {
-
-    mainVideo.addEventListener("timeupdate", () => {
-
-        const t = mainVideo.currentTime;
-
-        if (t > 1.5 && t < 2 && !observersSpawned) {
-            spawnObservers();
-            observersSpawned = true;
-        }
-
-        if (t > 3 && t < 3.5) spawnObservers();
-        if (t > 5 && t < 5.5) spawnObservers();
-
-        if (Math.random() < 0.005) spawnObservers();
-    });
-}
-
-
-/* =========================
-   START WEBCAM GAME
+   WEBCAM GAME
 ========================= */
 async function startWebcamGame() {
 
     experience.style.display = "none";
     gameScreen.style.display = "block";
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-        video: true
-    });
-
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
     webcamVideo.srcObject = stream;
 
     gameActive = true;
     round = 0;
 
+    updateBoxSize();
+
     moveBox();
     startRounds();
 }
 
-
 /* =========================
-   ROUNDS SYSTEM (6 x 7s)
+   ROUNDS
 ========================= */
 function startRounds() {
 
@@ -159,22 +117,27 @@ function startRounds() {
             return;
         }
 
+        updateBoxSize(); // 🔥 FIX: per round groeien
+
         let timeLeft = 7;
         timerEl.innerText = timeLeft;
+        timerEl.classList.remove("stress");
 
-        heartbeatSound.volume = 0.2;
-        heartbeatSound.play();
+        // heartbeat start 1x
+        if (!heartbeatStarted) {
+            heartbeatSound.loop = true;
+            heartbeatSound.volume = 0.2;
+            heartbeatSound.play();
+            heartbeatStarted = true;
+        }
 
         const countdown = setInterval(() => {
 
             timeLeft--;
             timerEl.innerText = timeLeft;
 
-            // 🔥 STRESS MODE laatste 3 sec
             if (timeLeft <= 3) {
                 timerEl.classList.add("stress");
-
-                // heartbeat sneller / luider gevoel
                 heartbeatSound.volume = 0.6;
             } else {
                 timerEl.classList.remove("stress");
@@ -196,20 +159,16 @@ function startRounds() {
     nextRound();
 }
 
-
 /* =========================
-   SNAPSHOT + FLASH + FREEZE
+   SNAPSHOT FX
 ========================= */
 function snapshotSequence() {
 
-    // FLASH START
     flash.style.opacity = "1";
 
-    // 🔊 CAMERA SHUTTER SOUND
     shutterSound.currentTime = 0;
     shutterSound.play();
 
-    // freeze game
     gameActive = false;
 
     setTimeout(() => {
@@ -219,17 +178,14 @@ function snapshotSequence() {
 
         ctx.drawImage(webcamVideo, 0, 0);
 
-        // FLASH OUT
         flash.style.opacity = "0";
 
-        // freeze delay (1 sec horror pause)
         setTimeout(() => {
             gameActive = true;
         }, 1000);
 
     }, 250);
 }
-
 
 /* =========================
    BOX MOVEMENT
@@ -250,13 +206,26 @@ function moveBox() {
     setTimeout(moveBox, 1200);
 }
 
+/* =========================
+   BOX SIZE
+========================= */
+function updateBoxSize() {
+
+    const progress = round / (TOTAL_ROUNDS - 1);
+    const size = MIN_SIZE + (MAX_SIZE - MIN_SIZE) * progress;
+
+    dodgeBox.style.width = size + "vw";
+    dodgeBox.style.height = (size * 0.65) + "vw";
+}
 
 /* =========================
-   END GAME
+   END
 ========================= */
 function endGame() {
 
     gameActive = false;
+
+    heartbeatSound.pause();
 
     alert("Fragments collected... returning to The Others");
 
