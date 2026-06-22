@@ -362,13 +362,6 @@ body{
     z-index:3000;
 }
 
-#shutdownImage{
-    width:min(70vw, 900px);
-    height:auto;
-    object-fit:contain;
-    margin-bottom:2rem;
-}
-
 #readMessageBtn{
     padding:0.8rem 2rem;
     background:transparent;
