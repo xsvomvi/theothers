@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Others</title>
-
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -17,15 +16,10 @@
         </video>
     </div>
 
-    <!-- START SCREEN -->
+    <!-- START -->
     <div id="startScreen">
         <p id="startText">SCAN FINGERPRINT TO START</p>
-
-        <img
-            src="images/fingerprint.png"
-            alt="Start Experience"
-            id="fingerprint"
-        >
+        <img src="images/fingerprint.png" id="fingerprint">
     </div>
 
     <!-- EXPERIENCE -->
@@ -38,16 +32,21 @@
 
     </div>
 
-    <!-- OVERLAYS (MUST BE OUTSIDE EXPERIENCE) -->
+    <!-- OVERLAYS -->
     <div id="observerOverlay"></div>
 
+    <!-- GAME -->
     <div id="gameScreen">
+
+        <div id="timer">7</div>
 
         <video id="webcamVideo" autoplay playsinline></video>
 
         <div id="dodgeBox">
             <img src="images/observers.png" id="boxLogo">
         </div>
+
+        <div id="flash"></div>
 
         <canvas id="snapshotCanvas"></canvas>
 

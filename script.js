@@ -15,7 +15,6 @@ const fingerprint = document.getElementById("fingerprint");
 
 const mainVideo = document.getElementById("mainVideo");
 const continueBtn = document.getElementById("continueBtn");
-const buttonSound = new Audio("sounds/button.mp3");
 const overlay = document.getElementById("observerOverlay");
 
 const gameScreen = document.getElementById("gameScreen");
@@ -24,9 +23,11 @@ const dodgeBox = document.getElementById("dodgeBox");
 const canvas = document.getElementById("snapshotCanvas");
 const ctx = canvas.getContext("2d");
 
+const timerEl = document.getElementById("timer");
+const flash = document.getElementById("flash");
+
+let round = 0;
 let gameActive = false;
-let wins = 0;
-let fragments = [];
 
 /* START */
 fingerprint.addEventListener("click", () => {
@@ -35,166 +36,110 @@ fingerprint.addEventListener("click", () => {
     playVideo(currentVideo);
 });
 
-/* PLAY VIDEO */
-function playVideo(index){
-
+/* VIDEO */
+function playVideo(i){
     continueBtn.style.display = "none";
-
-    mainVideo.src = videos[index];
-    mainVideo.load();
+    mainVideo.src = videos[i];
     mainVideo.play();
-
-    observersSpawned = false;
-
-    if (index === videos.length - 1) {
-        setupObserverSpawns();
-    }
 }
-
-/* END VIDEO */
-mainVideo.addEventListener("ended", () => {
-    continueBtn.style.display = "block";
-});
 
 /* CONTINUE */
 continueBtn.addEventListener("click", () => {
 
-    buttonSound.currentTime = 0;
-    buttonSound.play();
-
     currentVideo++;
 
-    if (currentVideo < videos.length) {
+    if(currentVideo < videos.length){
         playVideo(currentVideo);
     } else {
-        startWebcamGame();
+        startGame();
     }
 });
 
 /* OBSERVERS */
-function spawnObservers() {
+function spawnObserver(){
     const img = document.createElement("img");
     img.src = "images/observers.png";
     img.classList.add("observer");
 
-    img.style.left = Math.random() * 100 + "%";
-    img.style.top = Math.random() * 100 + "%";
+    img.style.left = Math.random()*100+"%";
+    img.style.top = Math.random()*100+"%";
 
     overlay.appendChild(img);
 }
 
-function setupObserverSpawns() {
-
-    mainVideo.addEventListener("timeupdate", () => {
-
-        const t = mainVideo.currentTime;
-
-        if (t > 1.5 && t < 2 && !observersSpawned) {
-            spawnObservers();
-            observersSpawned = true;
-        }
-
-        if (t > 3 && t < 3.5) spawnObservers();
-        if (t > 5 && t < 5.5) spawnObservers();
-
-        if (Math.random() < 0.005) spawnObservers();
-    });
-}
-
-/* =========================
-   WEBCAM GAME (FIXED)
-========================= */
-
-async function startWebcamGame() {
+/* GAME START */
+async function startGame(){
 
     experience.style.display = "none";
     gameScreen.style.display = "block";
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-        video: true
-    });
-
+    const stream = await navigator.mediaDevices.getUserMedia({video:true});
     webcamVideo.srcObject = stream;
 
     gameActive = true;
-    wins = 0;
-
+    startRounds();
     moveBox();
-    startSnapshots();
+}
+
+/* ROUNDS (6x 7 sec) */
+function startRounds(){
+
+    round = 0;
+
+    function nextRound(){
+
+        if(round >= 6){
+            alert("game done (placeholder ending)");
+            return;
+        }
+
+        let timeLeft = 7;
+        timerEl.innerText = timeLeft;
+
+        const countdown = setInterval(() => {
+
+            timeLeft--;
+            timerEl.innerText = timeLeft;
+
+            if(timeLeft <= 0){
+                clearInterval(countdown);
+
+                takeSnapshot();
+
+                round++;
+                nextRound();
+            }
+
+        },1000);
+    }
+
+    nextRound();
+}
+
+/* SNAPSHOT + FLASH */
+function takeSnapshot(){
+
+    flash.style.opacity = 1;
+
+    setTimeout(() => {
+        flash.style.opacity = 0;
+    }, 300);
+
+    setTimeout(() => {
+        canvas.width = webcamVideo.videoWidth;
+        canvas.height = webcamVideo.videoHeight;
+
+        ctx.drawImage(webcamVideo,0,0);
+    }, 1000); // 1 sec “pause feel”
 }
 
 /* BOX MOVE */
-function moveBox() {
+function moveBox(){
 
-    if (!gameActive) return;
+    if(!gameActive) return;
 
-    const x = Math.random() * (window.innerWidth - 200);
-    const y = Math.random() * (window.innerHeight - 200);
+    dodgeBox.style.left = Math.random()*80+"vw";
+    dodgeBox.style.top = Math.random()*80+"vh";
 
-    dodgeBox.style.left = x + "px";
-    dodgeBox.style.top = y + "px";
-
-    setTimeout(moveBox, 1200);
-}
-
-/* SNAPSHOTS */
-function startSnapshots() {
-
-    setInterval(() => {
-        if (!gameActive) return;
-        takeSnapshot();
-    }, 7000);
-}
-
-/* SNAPSHOT */
-function takeSnapshot() {
-
-    canvas.width = webcamVideo.videoWidth;
-    canvas.height = webcamVideo.videoHeight;
-
-    ctx.drawImage(webcamVideo, 0, 0);
-
-    const xRatio = canvas.width / window.innerWidth;
-    const yRatio = canvas.height / window.innerHeight;
-
-    const box = dodgeBox.getBoundingClientRect();
-
-    const sx = box.left * xRatio;
-    const sy = box.top * yRatio;
-    const sw = box.width * xRatio;
-    const sh = box.height * yRatio;
-
-    const imageData = ctx.getImageData(sx, sy, sw, sh);
-
-    let hit = 0;
-
-    for (let i = 0; i < imageData.data.length; i += 4) {
-        if (imageData.data[i] > 20) hit++;
-    }
-
-    const threshold = imageData.data.length * 0.05;
-
-    if (hit > threshold) {
-        fragments.push(Date.now());
-    } else {
-        wins++;
-    }
-
-    checkGameEnd();
-}
-
-/* WIN CHECK */
-function checkGameEnd() {
-
-    if (wins >= 5) {
-
-        gameActive = false;
-
-        alert("Fragments collected... returning to The Others");
-
-        gameScreen.style.display = "none";
-
-        currentVideo = 0;
-        playVideo(currentVideo);
-    }
+    setTimeout(moveBox,1200);
 }
