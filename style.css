@@ -207,3 +207,15 @@ body{
 .freeze #dodgeBox{
     transition:none !important;
 }
+
+#timer{
+    position:absolute;
+    top:2rem;
+    left:50%;
+    transform:translateX(-50%);
+    font-size:3rem;
+    color:white;
+    font-family:monospace;
+    z-index:2000;
+    letter-spacing:0.2rem;
+}

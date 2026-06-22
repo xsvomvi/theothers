@@ -162,10 +162,13 @@ function startRounds() {
         const countdown = setInterval(() => {
 
             timeLeft--;
+
+            // 🔥 LIVE UPDATE
             timerEl.innerText = timeLeft;
 
             if (timeLeft <= 0) {
                 clearInterval(countdown);
+
                 snapshotSequence();
 
                 round++;
