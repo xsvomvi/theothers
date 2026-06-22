@@ -343,11 +343,43 @@ function endGame() {
     heartbeatSound.pause();
 
     dodgeBox.style.display = "none";
-    gameScreen.style.display = "none";
 
-    overlay.innerHTML = ""; // 🔥 belangrijk
+    // ❌ NIET meteen gameScreen verbergen
+    startShutdownTransition();
+}
 
-    showShutdownScreen();
+function startShutdownTransition() {
+
+    // 1. laat webcam nog even zichtbaar blijven
+    document.body.classList.add("glitch");
+
+    flash.style.opacity = "1";
+
+    setTimeout(() => {
+
+        flash.style.opacity = "0";
+
+    }, 200);
+
+    // 2. korte “corrupt moment”
+    setTimeout(() => {
+
+        gameScreen.style.filter = "contrast(2) brightness(0.2) hue-rotate(180deg)";
+
+    }, 400);
+
+    // 3. harde cut naar shutdown
+    setTimeout(() => {
+
+        document.body.classList.remove("glitch");
+        gameScreen.style.display = "none";
+        gameScreen.style.filter = "none";
+
+        overlay.innerHTML = "";
+
+        showShutdownScreen();
+
+    }, 1500);
 }
 
 function showShutdownScreen() {
