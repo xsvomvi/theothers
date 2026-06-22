@@ -6,6 +6,16 @@ const videos = [
     "videos/innervoice_05.mov"
 ];
 
+const othersVideos = [
+    "videos/theothers_01.mov",
+    "videos/theothers_02.mov",
+    "videos/theothers_03.mov",
+    "videos/theothers_04.mov"
+];
+
+let othersIndex = 0;
+let othersActive = false;
+
 let currentVideo = 0;
 
 /* OBSERVERS */
@@ -57,6 +67,8 @@ const preGameTimer = document.getElementById("preGameTimer");
 const shutdownScreen = document.getElementById("shutdownScreen");
 const readMessageBtn = document.getElementById("readMessageBtn");
 
+const othersEyeLogo = document.getElementById("othersEyeLogo");
+
 /* =========================
    START
 ========================= */
@@ -101,6 +113,19 @@ continueBtn.addEventListener("click", () => {
     buttonSound.currentTime = 0;
     buttonSound.play();
 
+    // 🔥 IF THE OTHERS MODE
+    if (othersActive) {
+
+        othersIndex++;
+
+        if (othersIndex < othersVideos.length) {
+            playOthersVideo(othersIndex);
+        }
+
+        return;
+    }
+
+    // 🔥 OTHERWISE INNERVIOCE FLOW
     currentVideo++;
 
     if (currentVideo < videos.length) {
@@ -398,5 +423,35 @@ function showShutdownScreen() {
    READ MESSAGE
 ========================= */
 readMessageBtn.addEventListener("click", () => {
-    console.log("MESSAGE OPENED");
+
+    shutdownScreen.style.display = "none";
+
+    startOthersExperience();
 });
+
+function startOthersExperience() {
+
+    othersActive = true;
+    othersIndex = 0;
+
+    experience.style.display = "flex";
+
+    // show logo ONLY here
+    othersEyeLogo.classList.remove("hidden");
+
+    playOthersVideo(othersIndex);
+}
+
+function playOthersVideo(index) {
+
+    continueBtn.style.display = "none";
+
+    mainVideo.src = othersVideos[index];
+    mainVideo.load();
+
+    mainVideo.oncanplay = () => mainVideo.play();
+
+    mainVideo.onended = () => {
+        continueBtn.style.display = "block";
+    };
+}

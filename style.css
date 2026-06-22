@@ -353,3 +353,19 @@ body{
     75%{ transform:translate(-2px,0); }
     100%{ transform:translate(0); filter:hue-rotate(180deg); }
 }
+
+#othersEyeLogo{
+    position:absolute;
+    top:2vh;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:9999;
+    width:140px; /* iets groter zoals je wilde */
+    pointer-events:none;
+}
+
+#othersEyeLogo video{
+    width:100%;
+    height:auto;
+    object-fit:contain;
+}
