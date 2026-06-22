@@ -11,6 +11,7 @@ let currentVideo = 0;
 /* OBSERVERS */
 let observerInit = false;
 let observerCount = 0;
+let observerEnabled = false; // 🔥 FIX
 
 /* GAME */
 let round = 0;
@@ -84,7 +85,10 @@ function playVideo(index) {
     observerInit = false;
     observerCount = 0;
 
-    if (index === videos.length - 1) {
+    // 🔥 ONLY INNERVIOCE 05 gets observers
+    observerEnabled = (index === videos.length - 1);
+
+    if (observerEnabled) {
         setupObserverSpawns();
     }
 }
@@ -120,7 +124,7 @@ readyBtn.addEventListener("click", () => {
 });
 
 /* =========================
-   OBSERVERS
+   OBSERVERS FIXED SYSTEM
 ========================= */
 function spawnObservers() {
     const img = document.createElement("img");
@@ -135,10 +139,12 @@ function spawnObservers() {
 
 function setupObserverSpawns() {
 
-    if (observerInit) return;
+    if (observerInit || !observerEnabled) return;
     observerInit = true;
 
     mainVideo.addEventListener("timeupdate", () => {
+
+        if (!observerEnabled) return;
 
         const t = mainVideo.currentTime;
 
@@ -151,6 +157,11 @@ function setupObserverSpawns() {
             observerCount++;
         }
     });
+}
+
+/* 🔥 CLEANUP FIX */
+function clearObservers() {
+    overlay.innerHTML = "";
 }
 
 /* =========================
@@ -344,42 +355,29 @@ function endGame() {
 
     dodgeBox.style.display = "none";
 
-    // ❌ NIET meteen gameScreen verbergen
     startShutdownTransition();
 }
 
 function startShutdownTransition() {
 
-    // 1. laat webcam nog even zichtbaar blijven
     document.body.classList.add("glitch");
 
     flash.style.opacity = "1";
 
     setTimeout(() => {
-
         flash.style.opacity = "0";
-
     }, 200);
 
-    // 2. korte “corrupt moment”
     setTimeout(() => {
-
-        gameScreen.style.filter = "contrast(2) brightness(0.2) hue-rotate(180deg)";
-
-    }, 400);
-
-    // 3. harde cut naar shutdown
-    setTimeout(() => {
-
-        document.body.classList.remove("glitch");
         gameScreen.style.display = "none";
-        gameScreen.style.filter = "none";
+        shutdownScreen.style.display = "none";
+    }, 2600);
 
-        overlay.innerHTML = "";
-
+    setTimeout(() => {
+        document.body.classList.remove("glitch");
+        clearObservers(); // 🔥 IMPORTANT FIX
         showShutdownScreen();
-
-    }, 1500);
+    }, 3300);
 }
 
 function showShutdownScreen() {
@@ -390,7 +388,7 @@ function showShutdownScreen() {
 
         document.body.classList.remove("glitch");
 
-        shutdownScreen.style.display = "flex"; // 🔥 essentieel
+        shutdownScreen.style.display = "flex";
         shutdownScreen.classList.remove("hidden");
 
     }, 2000);
@@ -400,8 +398,5 @@ function showShutdownScreen() {
    READ MESSAGE
 ========================= */
 readMessageBtn.addEventListener("click", () => {
-
     console.log("MESSAGE OPENED");
-
-    // volgende scene hier
 });
