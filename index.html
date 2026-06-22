@@ -24,12 +24,10 @@
 
 <!-- EXPERIENCE -->
 <div id="experience">
-
     <div class="video-wrapper">
         <video id="mainVideo" playsinline></video>
         <button id="continueBtn">continue</button>
     </div>
-
 </div>
 
 <!-- OVERLAY -->
@@ -37,13 +35,14 @@
 
 <!-- GAME -->
 <div id="gameScreen">
+
     <audio id="heartbeatSound" src="sounds/heartbeat.mp3" loop></audio>
     <audio id="shutterSound" src="sounds/shutter.mp3"></audio>
 
     <div id="timer">7</div>
 
     <div id="preGameOverlay">
-        <div id="preGameText">stand in the designated tape area</div>
+        <div id="preGameText">(stand in the tape area)</div>
         <div id="preGameTimer">7</div>
     </div>
 
@@ -59,12 +58,16 @@
 
 </div>
 
-<div id="tutorialScreen">
-    
+<!-- TUTORIAL -->
+<div id="tutorialScreen" class="hidden">
     <img src="images/tutorial.png" id="tutorialImage">
-
     <button id="readyBtn">i'm ready</button>
+</div>
 
+<!-- SHUTDOWN -->
+<div id="shutdownScreen" class="hidden">
+    <img src="images/shutdown.png" id="shutdownImage">
+    <button id="readMessageBtn">read message</button>
 </div>
 
 <script src="script.js"></script>

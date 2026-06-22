@@ -45,7 +45,6 @@ const flash = document.getElementById("flash");
 const heartbeatSound = document.getElementById("heartbeatSound");
 const shutterSound = document.getElementById("shutterSound");
 
-/* 🆕 TUTORIAL + PRE-GAME */
 const tutorialScreen = document.getElementById("tutorialScreen");
 const readyBtn = document.getElementById("readyBtn");
 
@@ -86,7 +85,7 @@ function playVideo(index) {
 }
 
 /* =========================
-   CONTINUE → TUTORIAL
+   CONTINUE → NEXT / TUTORIAL
 ========================= */
 continueBtn.addEventListener("click", () => {
 
@@ -103,7 +102,7 @@ continueBtn.addEventListener("click", () => {
 });
 
 /* =========================
-   TUTORIAL SCREEN
+   TUTORIAL
 ========================= */
 function showTutorial() {
     experience.style.display = "none";
@@ -116,7 +115,7 @@ readyBtn.addEventListener("click", () => {
 });
 
 /* =========================
-   OBSERVERS (ONLY VIDEO 5)
+   OBSERVERS
 ========================= */
 function spawnObservers() {
     const img = document.createElement("img");
@@ -150,10 +149,11 @@ function setupObserverSpawns() {
 }
 
 /* =========================
-   WEBCAM ENTRY (PRE-GAME)
+   WEBCAM START
 ========================= */
 async function startWebcamGame() {
 
+    gameScreen.classList.remove("hidden");
     gameScreen.style.display = "block";
 
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -168,12 +168,11 @@ async function startWebcamGame() {
 }
 
 /* =========================
-   PRE-GAME LOCKDOWN (7 sec)
+   PRE-GAME
 ========================= */
 function startPreGameCountdown() {
 
     dodgeBox.style.display = "none";
-
     preGameOverlay.style.display = "flex";
 
     let timeLeft = 7;
@@ -188,7 +187,6 @@ function startPreGameCountdown() {
             clearInterval(countdown);
 
             preGameOverlay.style.display = "none";
-
             startActualGame();
         }
 
@@ -196,7 +194,7 @@ function startPreGameCountdown() {
 }
 
 /* =========================
-   ACTUAL GAME START
+   GAME START
 ========================= */
 function startActualGame() {
 
@@ -218,7 +216,7 @@ function startActualGame() {
 }
 
 /* =========================
-   ROUNDS SYSTEM
+   ROUNDS
 ========================= */
 function startRounds() {
 
@@ -233,7 +231,6 @@ function startRounds() {
 
         let timeLeft = 7;
         timerEl.innerText = timeLeft;
-        timerEl.classList.remove("stress");
 
         if (!heartbeatStarted) {
             heartbeatSound.loop = true;
@@ -254,10 +251,8 @@ function startRounds() {
             timerEl.innerText = timeLeft;
 
             if (timeLeft <= 3) {
-                timerEl.classList.add("stress");
                 heartbeatSound.volume = 0.6;
             } else {
-                timerEl.classList.remove("stress");
                 heartbeatSound.volume = 0.2;
             }
 
@@ -277,7 +272,7 @@ function startRounds() {
 }
 
 /* =========================
-   SNAPSHOT FX
+   SNAPSHOT EFFECT
 ========================= */
 function snapshotSequence() {
 
@@ -336,7 +331,7 @@ function updateBoxSize() {
 }
 
 /* =========================
-   END GAME
+   END GAME → SHUTDOWN
 ========================= */
 function endGame() {
 
@@ -348,6 +343,33 @@ function endGame() {
 
     gameScreen.style.display = "none";
 
-    currentVideo = 0;
-    playVideo(currentVideo);
+    showShutdownScreen();
 }
+
+/* =========================
+   SHUTDOWN SCREEN
+========================= */
+function showShutdownScreen() {
+
+    const shutdown = document.getElementById("shutdownScreen");
+
+    document.body.classList.add("glitch");
+
+    setTimeout(() => {
+
+        document.body.classList.remove("glitch");
+
+        shutdown.classList.remove("hidden");
+
+    }, 2000);
+}
+
+/* =========================
+   SHUTDOWN BUTTON
+========================= */
+document.getElementById("readMessageBtn").addEventListener("click", () => {
+
+    console.log("MESSAGE OPENED");
+    // hier kun je je volgende scene starten
+
+});
