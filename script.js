@@ -45,11 +45,16 @@ const flash = document.getElementById("flash");
 const heartbeatSound = document.getElementById("heartbeatSound");
 const shutterSound = document.getElementById("shutterSound");
 
+/* TUTORIAL + PRE-GAME */
 const tutorialScreen = document.getElementById("tutorialScreen");
 const readyBtn = document.getElementById("readyBtn");
 
 const preGameOverlay = document.getElementById("preGameOverlay");
 const preGameTimer = document.getElementById("preGameTimer");
+
+/* SHUTDOWN */
+const shutdownScreen = document.getElementById("shutdownScreen");
+const readMessageBtn = document.getElementById("readMessageBtn");
 
 /* =========================
    START
@@ -85,7 +90,7 @@ function playVideo(index) {
 }
 
 /* =========================
-   CONTINUE → NEXT / TUTORIAL
+   CONTINUE
 ========================= */
 continueBtn.addEventListener("click", () => {
 
@@ -153,7 +158,6 @@ function setupObserverSpawns() {
 ========================= */
 async function startWebcamGame() {
 
-    gameScreen.classList.remove("hidden");
     gameScreen.style.display = "block";
 
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -272,7 +276,7 @@ function startRounds() {
 }
 
 /* =========================
-   SNAPSHOT EFFECT
+   SNAPSHOT
 ========================= */
 function snapshotSequence() {
 
@@ -351,25 +355,23 @@ function endGame() {
 ========================= */
 function showShutdownScreen() {
 
-    const shutdown = document.getElementById("shutdownScreen");
-
     document.body.classList.add("glitch");
 
     setTimeout(() => {
 
         document.body.classList.remove("glitch");
 
-        shutdown.classList.remove("hidden");
+        shutdownScreen.classList.remove("hidden");
 
     }, 2000);
 }
 
 /* =========================
-   SHUTDOWN BUTTON
+   READ MESSAGE
 ========================= */
-document.getElementById("readMessageBtn").addEventListener("click", () => {
+readMessageBtn.addEventListener("click", () => {
 
     console.log("MESSAGE OPENED");
-    // hier kun je je volgende scene starten
 
+    // volgende scene hier
 });
