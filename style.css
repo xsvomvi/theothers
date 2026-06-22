@@ -175,10 +175,10 @@ body{
 
 /* mini observers logo op box */
 #boxLogo {
-    width: 14px;
-    height: 14px;
+    width: 67px;
+    height: 67px;
     position: absolute;
-    top: -0.6rem;
+    top: -2.2rem;
     left: 50%;
     transform: translateX(-50%);
     opacity: 0.9;
@@ -187,4 +187,23 @@ body{
 /* hidden canvas */
 #snapshotCanvas {
     display: none;
+}
+
+#flash{
+    position:fixed;
+    inset:0;
+    background:white;
+    opacity:0;
+    pointer-events:none;
+    z-index:9999;
+    transition:opacity 0.15s ease;
+}
+
+/* freeze effect */
+.freeze{
+    pointer-events:none;
+}
+
+.freeze #dodgeBox{
+    transition:none !important;
 }

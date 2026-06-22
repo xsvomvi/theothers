@@ -9,14 +9,11 @@ const videos = [
 let currentVideo = 0;
 let observersSpawned = false;
 
-let snapshotInterval = null;
-let gameActive = false;
-let wins = 0;
-let fragments = [];
+let round = 0;
+const TOTAL_ROUNDS = 6;
 
-/* =========================
-   ELEMENTS
-========================= */
+let gameActive = false;
+
 const startScreen = document.getElementById("startScreen");
 const experience = document.getElementById("experience");
 const fingerprint = document.getElementById("fingerprint");
@@ -34,9 +31,12 @@ const dodgeBox = document.getElementById("dodgeBox");
 const canvas = document.getElementById("snapshotCanvas");
 const ctx = canvas.getContext("2d");
 
+const timerEl = document.getElementById("timer");
+const flash = document.getElementById("flash");
+
 
 /* =========================
-   START
+   START EXPERIENCE
 ========================= */
 fingerprint.addEventListener("click", () => {
     startScreen.style.display = "none";
@@ -46,26 +46,17 @@ fingerprint.addEventListener("click", () => {
 
 
 /* =========================
-   PLAY VIDEO (FIXED)
+   PLAY VIDEO
 ========================= */
-function playVideo(index) {
+function playVideo(index){
 
     continueBtn.style.display = "none";
-
-    // reset events + state
-    mainVideo.oncanplay = null;
-    mainVideo.onended = null;
-
-    mainVideo.pause();
-    mainVideo.currentTime = 0;
 
     mainVideo.src = videos[index];
     mainVideo.load();
 
     mainVideo.oncanplay = () => {
-        mainVideo.play().catch(err => {
-            console.log("Video play blocked:", err);
-        });
+        mainVideo.play();
     };
 
     mainVideo.onended = () => {
@@ -99,7 +90,7 @@ continueBtn.addEventListener("click", () => {
 
 
 /* =========================
-   OBSERVERS
+   OBSERVERS SYSTEM
 ========================= */
 function spawnObservers() {
     const img = document.createElement("img");
@@ -132,7 +123,7 @@ function setupObserverSpawns() {
 
 
 /* =========================
-   WEBCAM GAME
+   START WEBCAM GAME
 ========================= */
 async function startWebcamGame() {
 
@@ -146,11 +137,75 @@ async function startWebcamGame() {
     webcamVideo.srcObject = stream;
 
     gameActive = true;
-    wins = 0;
-    fragments = [];
+    round = 0;
 
     moveBox();
-    startSnapshots();
+    startRounds();
+}
+
+
+/* =========================
+   ROUNDS SYSTEM (6 x 7s)
+========================= */
+function startRounds() {
+
+    function nextRound() {
+
+        if (round >= TOTAL_ROUNDS) {
+            endGame();
+            return;
+        }
+
+        let timeLeft = 7;
+        timerEl.innerText = timeLeft;
+
+        const countdown = setInterval(() => {
+
+            timeLeft--;
+            timerEl.innerText = timeLeft;
+
+            if (timeLeft <= 0) {
+                clearInterval(countdown);
+                snapshotSequence();
+
+                round++;
+                nextRound();
+            }
+
+        }, 1000);
+    }
+
+    nextRound();
+}
+
+
+/* =========================
+   SNAPSHOT + FLASH + FREEZE
+========================= */
+function snapshotSequence() {
+
+    // FLASH START
+    flash.style.opacity = "1";
+
+    // freeze movement
+    gameActive = false;
+
+    setTimeout(() => {
+
+        canvas.width = webcamVideo.videoWidth;
+        canvas.height = webcamVideo.videoHeight;
+
+        ctx.drawImage(webcamVideo, 0, 0);
+
+        // FLASH OUT
+        flash.style.opacity = "0";
+
+        // freeze effect duration (1 sec feel)
+        setTimeout(() => {
+            gameActive = true;
+        }, 1000);
+
+    }, 250);
 }
 
 
@@ -159,7 +214,10 @@ async function startWebcamGame() {
 ========================= */
 function moveBox() {
 
-    if (!gameActive) return;
+    if (!gameActive) {
+        setTimeout(moveBox, 200);
+        return;
+    }
 
     const x = Math.random() * (window.innerWidth - 200);
     const y = Math.random() * (window.innerHeight - 200);
@@ -172,75 +230,16 @@ function moveBox() {
 
 
 /* =========================
-   SNAPSHOTS (FIXED INTERVAL)
+   END GAME
 ========================= */
-function startSnapshots() {
+function endGame() {
 
-    if (snapshotInterval) {
-        clearInterval(snapshotInterval);
-    }
+    gameActive = false;
 
-    snapshotInterval = setInterval(() => {
-        if (!gameActive) return;
-        takeSnapshot();
-    }, 7000);
-}
+    alert("Fragments collected... returning to The Others");
 
+    gameScreen.style.display = "none";
 
-/* =========================
-   SNAPSHOT LOGIC
-========================= */
-function takeSnapshot() {
-
-    canvas.width = webcamVideo.videoWidth;
-    canvas.height = webcamVideo.videoHeight;
-
-    ctx.drawImage(webcamVideo, 0, 0);
-
-    const xRatio = canvas.width / window.innerWidth;
-    const yRatio = canvas.height / window.innerHeight;
-
-    const box = dodgeBox.getBoundingClientRect();
-
-    const sx = box.left * xRatio;
-    const sy = box.top * yRatio;
-    const sw = box.width * xRatio;
-    const sh = box.height * yRatio;
-
-    const imageData = ctx.getImageData(sx, sy, sw, sh);
-
-    let hit = 0;
-
-    for (let i = 0; i < imageData.data.length; i += 4) {
-        if (imageData.data[i] > 20) hit++;
-    }
-
-    const threshold = imageData.data.length * 0.05;
-
-    if (hit > threshold) {
-        fragments.push(Date.now());
-    } else {
-        wins++;
-    }
-
-    checkGameEnd();
-}
-
-
-/* =========================
-   END CONDITION
-========================= */
-function checkGameEnd() {
-
-    if (wins >= 5) {
-
-        gameActive = false;
-
-        alert("Fragments collected... returning to The Others");
-
-        gameScreen.style.display = "none";
-
-        currentVideo = 0;
-        playVideo(currentVideo);
-    }
+    currentVideo = 0;
+    playVideo(currentVideo);
 }
