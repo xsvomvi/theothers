@@ -132,6 +132,59 @@ body{
 }
 
 /* =========================
+   POLAROIDS
+========================= */
+#polaroidOverlay{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:998;
+}
+
+.polaroid{
+    position:absolute;
+    background:white;
+    padding:10px 10px 32px 10px;
+    box-shadow:0 4px 24px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.4);
+    opacity:0;
+    animation:polaroidDrop 0.6s ease forwards;
+    pointer-events:none;
+}
+
+.polaroid img{
+    display:block;
+    width:160px;
+    height:110px;
+    object-fit:cover;
+    filter:contrast(1.05) brightness(0.92);
+}
+
+.polaroid-label{
+    text-align:center;
+    font-family:'Courier New', monospace;
+    font-size:0.55rem;
+    color:#333;
+    margin-top:6px;
+    letter-spacing:0.15rem;
+    text-transform:uppercase;
+}
+
+@keyframes polaroidDrop{
+    0%{
+        opacity:0;
+        transform:translateY(-30px) rotate(var(--rot));
+    }
+    60%{
+        opacity:1;
+        transform:translateY(6px) rotate(var(--rot));
+    }
+    100%{
+        opacity:1;
+        transform:translateY(0px) rotate(var(--rot));
+    }
+}
+
+/* =========================
    GAME
 ========================= */
 #gameScreen{
@@ -360,7 +413,7 @@ body{
     left:50%;
     transform:translateX(-50%);
     z-index:9999;
-    width:140px; /* iets groter zoals je wilde */
+    width:140px;
     pointer-events:none;
 }
 

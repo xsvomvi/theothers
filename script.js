@@ -21,7 +21,7 @@ let currentVideo = 0;
 /* OBSERVERS */
 let observerInit = false;
 let observerCount = 0;
-let observerEnabled = false; // 🔥 FIX
+let observerEnabled = false;
 
 /* GAME */
 let round = 0;
@@ -29,6 +29,9 @@ const TOTAL_ROUNDS = 6;
 
 let gameActive = false;
 let heartbeatStarted = false;
+
+/* SNAPSHOTS */
+const snapshots = []; // stores base64 dataURLs of cropped box snapshots
 
 /* =========================
    DOM
@@ -42,6 +45,7 @@ const continueBtn = document.getElementById("continueBtn");
 const buttonSound = new Audio("sounds/button.mp3");
 
 const overlay = document.getElementById("observerOverlay");
+const polaroidOverlay = document.getElementById("polaroidOverlay");
 
 const gameScreen = document.getElementById("gameScreen");
 const webcamVideo = document.getElementById("webcamVideo");
@@ -97,7 +101,6 @@ function playVideo(index) {
     observerInit = false;
     observerCount = 0;
 
-    // 🔥 ONLY INNERVIOCE 05 gets observers
     observerEnabled = (index === videos.length - 1);
 
     if (observerEnabled) {
@@ -113,7 +116,6 @@ continueBtn.addEventListener("click", () => {
     buttonSound.currentTime = 0;
     buttonSound.play();
 
-    // 🔥 IF THE OTHERS MODE
     if (othersActive) {
 
         othersIndex++;
@@ -125,7 +127,6 @@ continueBtn.addEventListener("click", () => {
         return;
     }
 
-    // 🔥 OTHERWISE INNERVIOCE FLOW
     currentVideo++;
 
     if (currentVideo < videos.length) {
@@ -184,7 +185,6 @@ function setupObserverSpawns() {
     });
 }
 
-/* 🔥 CLEANUP FIX */
 function clearObservers() {
     overlay.innerHTML = "";
 }
@@ -312,7 +312,7 @@ function startRounds() {
 }
 
 /* =========================
-   SNAPSHOT
+   SNAPSHOT — ALLEEN DODGEBOX
 ========================= */
 function snapshotSequence() {
 
@@ -325,10 +325,40 @@ function snapshotSequence() {
 
     setTimeout(() => {
 
+        // Haal de positie en grootte van het dodgeBox op
+        const boxRect = dodgeBox.getBoundingClientRect();
+
+        // Stel canvas in op volledige webcamvideo grootte
         canvas.width = webcamVideo.videoWidth;
         canvas.height = webcamVideo.videoHeight;
 
+        // Teken de volledige webcamframe eerst
         ctx.drawImage(webcamVideo, 0, 0);
+
+        // Bereken de schaalverhouding van video vs. scherm
+        const scaleX = webcamVideo.videoWidth / window.innerWidth;
+        const scaleY = webcamVideo.videoHeight / window.innerHeight;
+
+        // Crop-coördinaten in videoresolutie
+        const cropX = boxRect.left * scaleX;
+        const cropY = boxRect.top * scaleY;
+        const cropW = boxRect.width * scaleX;
+        const cropH = boxRect.height * scaleY;
+
+        // Maak een aparte canvas voor de crop
+        const cropCanvas = document.createElement("canvas");
+        cropCanvas.width = cropW;
+        cropCanvas.height = cropH;
+        const cropCtx = cropCanvas.getContext("2d");
+
+        cropCtx.drawImage(
+            canvas,
+            cropX, cropY, cropW, cropH,
+            0, 0, cropW, cropH
+        );
+
+        // Sla op als dataURL
+        snapshots.push(cropCanvas.toDataURL("image/jpeg", 0.85));
 
         flash.style.opacity = "0";
 
@@ -400,7 +430,7 @@ function startShutdownTransition() {
 
     setTimeout(() => {
         document.body.classList.remove("glitch");
-        clearObservers(); // 🔥 IMPORTANT FIX
+        clearObservers();
         showShutdownScreen();
     }, 3300);
 }
@@ -436,7 +466,6 @@ function startOthersExperience() {
 
     experience.style.display = "flex";
 
-    // show logo ONLY here
     othersEyeLogo.classList.remove("hidden");
 
     playOthersVideo(othersIndex);
@@ -454,4 +483,110 @@ function playOthersVideo(index) {
     mainVideo.onended = () => {
         continueBtn.style.display = "block";
     };
+
+    // theothers_02.mov = index 1 → polaroids spawnen
+    if (index === 1) {
+        spawnPolaroidsDuringVideo();
+    }
+
+    // theothers_04.mov = index 3 → polaroids weghalen
+    if (index === 3) {
+        clearPolaroids();
+    }
+}
+
+/* =========================
+   POLAROID SYSTEEM
+========================= */
+
+// Posities die het midden vermijden (center = 30-70% x én 25-75% y)
+function getRandomPolaroidPosition() {
+    const pw = 180; // breedte polaroid (px)
+    const ph = 170; // hoogte polaroid (px)
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+
+    // Definieer het middenvak dat we vermijden
+    const midX1 = W * 0.28;
+    const midX2 = W * 0.72;
+    const midY1 = H * 0.22;
+    const midY2 = H * 0.78;
+
+    let x, y, attempts = 0;
+
+    do {
+        // Random positie over het hele scherm
+        x = Math.random() * (W - pw);
+        y = Math.random() * (H - ph);
+        attempts++;
+    } while (
+        // Zolang in het middengebied én max 30 pogingen
+        x + pw > midX1 && x < midX2 &&
+        y + ph > midY1 && y < midY2 &&
+        attempts < 30
+    );
+
+    return { x, y };
+}
+
+function spawnPolaroid(dataURL, labelIndex) {
+
+    const el = document.createElement("div");
+    el.classList.add("polaroid");
+
+    const img = document.createElement("img");
+    img.src = dataURL;
+
+    const label = document.createElement("div");
+    label.classList.add("polaroid-label");
+    label.innerText = `subject_0${labelIndex + 1}`;
+
+    el.appendChild(img);
+    el.appendChild(label);
+
+    const rot = (Math.random() * 20 - 10).toFixed(1); // -10° tot +10°
+    el.style.setProperty("--rot", rot + "deg");
+
+    const { x, y } = getRandomPolaroidPosition();
+    el.style.left = x + "px";
+    el.style.top = y + "px";
+
+    polaroidOverlay.appendChild(el);
+}
+
+function spawnPolaroidsDuringVideo() {
+
+    // Wacht tot video speelt, dan gooi ze één voor één
+    // Verdeel ze gelijkmatig over de duur van theothers_02
+
+    let polaroidIndex = 0;
+    let initialized = false;
+
+    function onTimeUpdate() {
+
+        if (!initialized) {
+            initialized = true;
+        }
+
+        if (polaroidIndex >= snapshots.length) {
+            mainVideo.removeEventListener("timeupdate", onTimeUpdate);
+            return;
+        }
+
+        const duration = mainVideo.duration || 30;
+        // Spawn op vaste intervallen: 15%, 25%, 38%, 52%, 65%, 80% van de video
+        const spawnPoints = [0.12, 0.24, 0.37, 0.50, 0.63, 0.78];
+        const t = mainVideo.currentTime / duration;
+
+        if (t >= spawnPoints[polaroidIndex]) {
+            spawnPolaroid(snapshots[polaroidIndex], polaroidIndex);
+            polaroidIndex++;
+        }
+    }
+
+    mainVideo.addEventListener("timeupdate", onTimeUpdate);
+}
+
+function clearPolaroids() {
+    polaroidOverlay.innerHTML = "";
 }
