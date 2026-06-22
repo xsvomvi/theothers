@@ -172,6 +172,8 @@ async function startWebcamGame() {
 ========================= */
 function startPreGameCountdown() {
 
+    dodgeBox.style.display = "none";
+
     preGameOverlay.style.display = "flex";
 
     let timeLeft = 7;
@@ -202,6 +204,14 @@ function startActualGame() {
     round = 0;
 
     updateBoxSize();
+
+    const x = Math.random() * (window.innerWidth - 200);
+    const y = Math.random() * (window.innerHeight - 200);
+
+    dodgeBox.style.left = x + "px";
+    dodgeBox.style.top = y + "px";
+
+    dodgeBox.style.display = "flex";
 
     moveBox();
     startRounds();
@@ -333,6 +343,8 @@ function endGame() {
     gameActive = false;
 
     heartbeatSound.pause();
+
+    dodgeBox.style.display = "none";
 
     gameScreen.style.display = "none";
 
