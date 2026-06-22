@@ -218,3 +218,70 @@ body{
     z-index:2000;
     letter-spacing:0.2rem;
 }
+
+#tutorialScreen {
+    position: fixed;
+    inset: 0;
+    background: black;
+
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    z-index: 2000;
+}
+
+#tutorialImage {
+    width: min(70vw, 900px);
+    height: auto;
+    object-fit: contain;
+    margin-bottom: 2rem;
+}
+
+#readyBtn {
+    padding: 0.8rem 2rem;
+    background: transparent;
+    border: 1px solid white;
+    color: white;
+    font-size: 1rem;
+    letter-spacing: 0.3rem;
+    text-transform: uppercase;
+    font-family: 'Courier New', monospace;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+#readyBtn:hover {
+    opacity: 0.7;
+}
+
+#preGameOverlay {
+    position: absolute;
+    inset: 0;
+    z-index: 2000;
+
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(3px);
+}
+
+#preGameText {
+    color: white;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.3rem;
+    text-transform: uppercase;
+    font-size: 1rem;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+#preGameTimer {
+    color: white;
+    font-family: 'Courier New', monospace;
+    font-size: 3rem;
+}

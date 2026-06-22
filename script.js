@@ -7,13 +7,21 @@ const videos = [
 ];
 
 let currentVideo = 0;
-let observersSpawned = false;
 
+/* OBSERVERS */
+let observerInit = false;
+let observerCount = 0;
+
+/* GAME */
 let round = 0;
 const TOTAL_ROUNDS = 6;
 
 let gameActive = false;
+let heartbeatStarted = false;
 
+/* =========================
+   DOM
+========================= */
 const startScreen = document.getElementById("startScreen");
 const experience = document.getElementById("experience");
 const fingerprint = document.getElementById("fingerprint");
@@ -37,10 +45,12 @@ const flash = document.getElementById("flash");
 const heartbeatSound = document.getElementById("heartbeatSound");
 const shutterSound = document.getElementById("shutterSound");
 
-const MIN_SIZE = 18;
-const MAX_SIZE = 38;
+/* 🆕 TUTORIAL + PRE-GAME */
+const tutorialScreen = document.getElementById("tutorialScreen");
+const readyBtn = document.getElementById("readyBtn");
 
-let heartbeatStarted = false;
+const preGameOverlay = document.getElementById("preGameOverlay");
+const preGameTimer = document.getElementById("preGameTimer");
 
 /* =========================
    START
@@ -52,9 +62,9 @@ fingerprint.addEventListener("click", () => {
 });
 
 /* =========================
-   VIDEO
+   VIDEO SYSTEM
 ========================= */
-function playVideo(index){
+function playVideo(index) {
 
     continueBtn.style.display = "none";
 
@@ -63,13 +73,20 @@ function playVideo(index){
 
     mainVideo.oncanplay = () => mainVideo.play();
 
-    mainVideo.onended = () => continueBtn.style.display = "block";
+    mainVideo.onended = () => {
+        continueBtn.style.display = "block";
+    };
 
-    observersSpawned = false;
+    observerInit = false;
+    observerCount = 0;
+
+    if (index === videos.length - 1) {
+        setupObserverSpawns();
+    }
 }
 
 /* =========================
-   CONTINUE
+   CONTINUE → TUTORIAL
 ========================= */
 continueBtn.addEventListener("click", () => {
 
@@ -81,20 +98,105 @@ continueBtn.addEventListener("click", () => {
     if (currentVideo < videos.length) {
         playVideo(currentVideo);
     } else {
-        startWebcamGame();
+        showTutorial();
     }
 });
 
 /* =========================
-   WEBCAM GAME
+   TUTORIAL SCREEN
+========================= */
+function showTutorial() {
+    experience.style.display = "none";
+    tutorialScreen.style.display = "flex";
+}
+
+readyBtn.addEventListener("click", () => {
+    tutorialScreen.style.display = "none";
+    startWebcamGame();
+});
+
+/* =========================
+   OBSERVERS (ONLY VIDEO 5)
+========================= */
+function spawnObservers() {
+    const img = document.createElement("img");
+    img.src = "images/observers.png";
+    img.classList.add("observer");
+
+    img.style.left = Math.random() * 100 + "%";
+    img.style.top = Math.random() * 100 + "%";
+
+    overlay.appendChild(img);
+}
+
+function setupObserverSpawns() {
+
+    if (observerInit) return;
+    observerInit = true;
+
+    mainVideo.addEventListener("timeupdate", () => {
+
+        const t = mainVideo.currentTime;
+
+        if (observerCount >= 6) return;
+
+        const spawnTimes = [1, 2, 3, 4, 5, 6];
+
+        if (t >= spawnTimes[observerCount]) {
+            spawnObservers();
+            observerCount++;
+        }
+    });
+}
+
+/* =========================
+   WEBCAM ENTRY (PRE-GAME)
 ========================= */
 async function startWebcamGame() {
 
-    experience.style.display = "none";
     gameScreen.style.display = "block";
 
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    const stream = await navigator.mediaDevices.getUserMedia({
+        video: true
+    });
+
     webcamVideo.srcObject = stream;
+
+    gameActive = false;
+
+    startPreGameCountdown();
+}
+
+/* =========================
+   PRE-GAME LOCKDOWN (7 sec)
+========================= */
+function startPreGameCountdown() {
+
+    preGameOverlay.style.display = "flex";
+
+    let timeLeft = 7;
+    preGameTimer.innerText = timeLeft;
+
+    const countdown = setInterval(() => {
+
+        timeLeft--;
+        preGameTimer.innerText = timeLeft;
+
+        if (timeLeft <= 0) {
+            clearInterval(countdown);
+
+            preGameOverlay.style.display = "none";
+
+            startActualGame();
+        }
+
+    }, 1000);
+}
+
+/* =========================
+   ACTUAL GAME START
+========================= */
+function startActualGame() {
 
     gameActive = true;
     round = 0;
@@ -106,7 +208,7 @@ async function startWebcamGame() {
 }
 
 /* =========================
-   ROUNDS
+   ROUNDS SYSTEM
 ========================= */
 function startRounds() {
 
@@ -117,17 +219,22 @@ function startRounds() {
             return;
         }
 
-        updateBoxSize(); // 🔥 FIX: per round groeien
+        updateBoxSize();
 
         let timeLeft = 7;
         timerEl.innerText = timeLeft;
         timerEl.classList.remove("stress");
 
-        // heartbeat start 1x
         if (!heartbeatStarted) {
             heartbeatSound.loop = true;
             heartbeatSound.volume = 0.2;
-            heartbeatSound.play();
+
+            heartbeatSound.play().catch(() => {
+                document.addEventListener("click", () => {
+                    heartbeatSound.play().catch(() => {});
+                }, { once: true });
+            });
+
             heartbeatStarted = true;
         }
 
@@ -212,22 +319,20 @@ function moveBox() {
 function updateBoxSize() {
 
     const progress = round / (TOTAL_ROUNDS - 1);
-    const size = MIN_SIZE + (MAX_SIZE - MIN_SIZE) * progress;
+    const size = 24 + (44 - 24) * progress;
 
     dodgeBox.style.width = size + "vw";
     dodgeBox.style.height = (size * 0.65) + "vw";
 }
 
 /* =========================
-   END
+   END GAME
 ========================= */
 function endGame() {
 
     gameActive = false;
 
     heartbeatSound.pause();
-
-    alert("Fragments collected... returning to The Others");
 
     gameScreen.style.display = "none";
 
