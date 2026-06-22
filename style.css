@@ -156,7 +156,7 @@ body{
 /* moving box */
 #dodgeBox {
     position: absolute;
-    width: 18vw;
+    width: 28vw;
     height: 18vw;
     min-width: 180px;
     min-height: 180px;
@@ -210,12 +210,12 @@ body{
 
 #timer{
     position:absolute;
-    top:2rem;
+    top:3rem;
     left:50%;
     transform:translateX(-50%);
-    font-size:3rem;
+    font-size:10rem;
     color:white;
-    font-family:monospace;
+    font-family:'Courier New', monospace;
     z-index:2000;
     letter-spacing:0.2rem;
 }

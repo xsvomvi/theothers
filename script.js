@@ -34,6 +34,9 @@ const ctx = canvas.getContext("2d");
 const timerEl = document.getElementById("timer");
 const flash = document.getElementById("flash");
 
+const heartbeatSound = document.getElementById("heartbeatSound");
+const shutterSound = document.getElementById("shutterSound");
+
 
 /* =========================
    START EXPERIENCE
@@ -159,12 +162,24 @@ function startRounds() {
         let timeLeft = 7;
         timerEl.innerText = timeLeft;
 
+        heartbeatSound.volume = 0.2;
+        heartbeatSound.play();
+
         const countdown = setInterval(() => {
 
             timeLeft--;
-
-            // 🔥 LIVE UPDATE
             timerEl.innerText = timeLeft;
+
+            // 🔥 STRESS MODE laatste 3 sec
+            if (timeLeft <= 3) {
+                timerEl.classList.add("stress");
+
+                // heartbeat sneller / luider gevoel
+                heartbeatSound.volume = 0.6;
+            } else {
+                timerEl.classList.remove("stress");
+                heartbeatSound.volume = 0.2;
+            }
 
             if (timeLeft <= 0) {
                 clearInterval(countdown);
@@ -190,7 +205,11 @@ function snapshotSequence() {
     // FLASH START
     flash.style.opacity = "1";
 
-    // freeze movement
+    // 🔊 CAMERA SHUTTER SOUND
+    shutterSound.currentTime = 0;
+    shutterSound.play();
+
+    // freeze game
     gameActive = false;
 
     setTimeout(() => {
@@ -203,7 +222,7 @@ function snapshotSequence() {
         // FLASH OUT
         flash.style.opacity = "0";
 
-        // freeze effect duration (1 sec feel)
+        // freeze delay (1 sec horror pause)
         setTimeout(() => {
             gameActive = true;
         }, 1000);
