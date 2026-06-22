@@ -41,9 +41,6 @@
 <!-- OVERLAY -->
 <div id="observerOverlay"></div>
 
-<!-- POLAROID OVERLAY -->
-<div id="polaroidOverlay"></div>
-
 <!-- GAME -->
 <div id="gameScreen">
     <audio id="heartbeatSound" src="sounds/heartbeat.mp3" loop></audio>
@@ -70,4 +67,21 @@
 
 <div id="tutorialScreen">
     
-    <img src="images/tutorial.png"
+    <img src="images/tutorial.png" id="tutorialImage">
+
+    <button id="readyBtn">i'm ready</button>
+
+</div>
+
+<div id="shutdownScreen" class="hidden">
+
+    <img src="images/shutdown.png" id="shutdownImage">
+
+    <button id="readMessageBtn">read message</button>
+
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
