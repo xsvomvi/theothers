@@ -340,19 +340,16 @@ function updateBoxSize() {
 function endGame() {
 
     gameActive = false;
-
     heartbeatSound.pause();
 
     dodgeBox.style.display = "none";
-
     gameScreen.style.display = "none";
+
+    overlay.innerHTML = ""; // 🔥 belangrijk
 
     showShutdownScreen();
 }
 
-/* =========================
-   SHUTDOWN SCREEN
-========================= */
 function showShutdownScreen() {
 
     document.body.classList.add("glitch");
@@ -361,6 +358,7 @@ function showShutdownScreen() {
 
         document.body.classList.remove("glitch");
 
+        shutdownScreen.style.display = "flex"; // 🔥 essentieel
         shutdownScreen.classList.remove("hidden");
 
     }, 2000);
