@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Others</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="logo-container">
+        <video id="logoVideo" autoplay muted loop playsinline>
+            <source src="videos/logo.mov">
+        </video>
+    </div>
+
+    <div id="startScreen">
+        <p id="startText">SCAN FINGERPRINT TO START</p>
+
+        <img
+            src="images/fingerprint.png"
+            alt="Start Experience"
+            id="fingerprint"
+        >
+    </div>
+
+    <div id="experience">
+
+        <div class="video-wrapper">
+            <video id="mainVideo" playsinline></video>
+
+            <button id="continueBtn">continue</button>
+        </div>
+
+        <div id="observerOverlay"></div>
+
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
