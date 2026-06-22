@@ -429,8 +429,16 @@ function showShutdownScreen() {
 
     setTimeout(() => {
         document.body.classList.remove("glitch");
+
+        shutdownScreen.style.opacity = "0";
+        shutdownScreen.style.transition = "opacity 1.5s ease";
         shutdownScreen.style.display = "flex";
         shutdownScreen.classList.remove("hidden");
+
+        setTimeout(() => {
+            shutdownScreen.style.opacity = "1";
+        }, 50);
+
     }, 2000);
 }
 
@@ -475,8 +483,8 @@ function playOthersVideo(index) {
         });
     }
 
-    // theothers_04.mov = index 3 → polaroids weghalen
-    if (index === 3) {
+    // theothers_04.mov = index 3
+    if (index === 4) {
         clearPolaroids();
     }
 }
