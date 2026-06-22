@@ -10,12 +10,14 @@
 
 <body>
 
+    <!-- LOGO -->
     <div class="logo-container">
         <video id="logoVideo" autoplay muted loop playsinline>
             <source src="videos/logo.mov">
         </video>
     </div>
 
+    <!-- START SCREEN -->
     <div id="startScreen">
         <p id="startText">SCAN FINGERPRINT TO START</p>
 
@@ -26,15 +28,28 @@
         >
     </div>
 
+    <!-- EXPERIENCE -->
     <div id="experience">
 
         <div class="video-wrapper">
             <video id="mainVideo" playsinline></video>
-
             <button id="continueBtn">continue</button>
         </div>
 
-        <div id="observerOverlay"></div>
+    </div>
+
+    <!-- OVERLAYS (MUST BE OUTSIDE EXPERIENCE) -->
+    <div id="observerOverlay"></div>
+
+    <div id="gameScreen">
+
+        <video id="webcamVideo" autoplay playsinline></video>
+
+        <div id="dodgeBox">
+            <img src="images/observers.png" id="boxLogo">
+        </div>
+
+        <canvas id="snapshotCanvas"></canvas>
 
     </div>
 

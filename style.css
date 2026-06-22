@@ -12,7 +12,9 @@ body{
     font-family:Arial, Helvetica, sans-serif;
 }
 
-/* STARTSCHERM */
+/* =========================
+   STARTSCHERM
+========================= */
 #startScreen{
     width:100vw;
     height:100vh;
@@ -39,7 +41,9 @@ body{
     cursor:pointer;
 }
 
-/* EXPERIENCE */
+/* =========================
+   EXPERIENCE
+========================= */
 #experience{
     width:100vw;
     height:100vh;
@@ -104,7 +108,9 @@ body{
     opacity:0.7;
 }
 
-/* OBSERVERS OVERLAY */
+/* =========================
+   OBSERVERS OVERLAY
+========================= */
 #observerOverlay{
     position:fixed;
     inset:0;
@@ -112,17 +118,73 @@ body{
     z-index:999;
 }
 
-/* OBSERVERS */
 .observer{
     position:absolute;
     width:60px;
     height:auto;
     opacity:0.9;
     filter:contrast(1.2);
-    animation:flicker 2s infinite alternate;
+    animation:flicker 3s infinite alternate;
 }
 
 @keyframes flicker {
     0% { opacity:0.3; transform:scale(1); }
     100% { opacity:1; transform:scale(1.1); }
+}
+
+/* =========================
+   WEBCAM GAME
+========================= */
+#gameScreen {
+    position: fixed;
+    inset: 0;
+    display: none;
+    overflow: hidden;
+    background: black;
+    z-index: 1000;
+}
+
+/* webcam fullscreen */
+#webcamVideo {
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    filter: contrast(1.1) brightness(0.95);
+}
+
+/* moving box */
+#dodgeBox {
+    position: absolute;
+    width: 18vw;
+    height: 18vw;
+    min-width: 180px;
+    min-height: 180px;
+
+    border: 1px solid rgba(255,255,255,0.6);
+    background: rgba(255,255,255,0.06);
+    box-shadow: 0 0 10px rgba(255,255,255,0.12);
+    backdrop-filter: blur(2px);
+
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+
+    transition: top 0.6s ease, left 0.6s ease;
+}
+
+/* mini observers logo op box */
+#boxLogo {
+    width: 14px;
+    height: 14px;
+    position: absolute;
+    top: -0.6rem;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0.9;
+}
+
+/* hidden canvas */
+#snapshotCanvas {
+    display: none;
 }
