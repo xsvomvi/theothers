@@ -9,137 +9,238 @@ const videos = [
 let currentVideo = 0;
 let observersSpawned = false;
 
+let snapshotInterval = null;
+let gameActive = false;
+let wins = 0;
+let fragments = [];
+
+/* =========================
+   ELEMENTS
+========================= */
 const startScreen = document.getElementById("startScreen");
 const experience = document.getElementById("experience");
 const fingerprint = document.getElementById("fingerprint");
 
 const mainVideo = document.getElementById("mainVideo");
 const continueBtn = document.getElementById("continueBtn");
+const buttonSound = new Audio("sounds/button.mp3");
+
 const overlay = document.getElementById("observerOverlay");
 
 const gameScreen = document.getElementById("gameScreen");
 const webcamVideo = document.getElementById("webcamVideo");
 const dodgeBox = document.getElementById("dodgeBox");
+
 const canvas = document.getElementById("snapshotCanvas");
 const ctx = canvas.getContext("2d");
 
-const timerEl = document.getElementById("timer");
-const flash = document.getElementById("flash");
 
-let round = 0;
-let gameActive = false;
-
-/* START */
+/* =========================
+   START
+========================= */
 fingerprint.addEventListener("click", () => {
     startScreen.style.display = "none";
     experience.style.display = "flex";
     playVideo(currentVideo);
 });
 
-/* VIDEO */
-function playVideo(i){
+
+/* =========================
+   PLAY VIDEO (FIXED)
+========================= */
+function playVideo(index) {
+
     continueBtn.style.display = "none";
-    mainVideo.src = videos[i];
-    mainVideo.play();
+
+    // reset events + state
+    mainVideo.oncanplay = null;
+    mainVideo.onended = null;
+
+    mainVideo.pause();
+    mainVideo.currentTime = 0;
+
+    mainVideo.src = videos[index];
+    mainVideo.load();
+
+    mainVideo.oncanplay = () => {
+        mainVideo.play().catch(err => {
+            console.log("Video play blocked:", err);
+        });
+    };
+
+    mainVideo.onended = () => {
+        continueBtn.style.display = "block";
+    };
+
+    observersSpawned = false;
+
+    if (index === videos.length - 1) {
+        setupObserverSpawns();
+    }
 }
 
-/* CONTINUE */
+
+/* =========================
+   CONTINUE BUTTON
+========================= */
 continueBtn.addEventListener("click", () => {
+
+    buttonSound.currentTime = 0;
+    buttonSound.play();
 
     currentVideo++;
 
-    if(currentVideo < videos.length){
+    if (currentVideo < videos.length) {
         playVideo(currentVideo);
     } else {
-        startGame();
+        startWebcamGame();
     }
 });
 
-/* OBSERVERS */
-function spawnObserver(){
+
+/* =========================
+   OBSERVERS
+========================= */
+function spawnObservers() {
     const img = document.createElement("img");
     img.src = "images/observers.png";
     img.classList.add("observer");
 
-    img.style.left = Math.random()*100+"%";
-    img.style.top = Math.random()*100+"%";
+    img.style.left = Math.random() * 100 + "%";
+    img.style.top = Math.random() * 100 + "%";
 
     overlay.appendChild(img);
 }
 
-/* GAME START */
-async function startGame(){
+function setupObserverSpawns() {
+
+    mainVideo.addEventListener("timeupdate", () => {
+
+        const t = mainVideo.currentTime;
+
+        if (t > 1.5 && t < 2 && !observersSpawned) {
+            spawnObservers();
+            observersSpawned = true;
+        }
+
+        if (t > 3 && t < 3.5) spawnObservers();
+        if (t > 5 && t < 5.5) spawnObservers();
+
+        if (Math.random() < 0.005) spawnObservers();
+    });
+}
+
+
+/* =========================
+   WEBCAM GAME
+========================= */
+async function startWebcamGame() {
 
     experience.style.display = "none";
     gameScreen.style.display = "block";
 
-    const stream = await navigator.mediaDevices.getUserMedia({video:true});
+    const stream = await navigator.mediaDevices.getUserMedia({
+        video: true
+    });
+
     webcamVideo.srcObject = stream;
 
     gameActive = true;
-    startRounds();
+    wins = 0;
+    fragments = [];
+
     moveBox();
+    startSnapshots();
 }
 
-/* ROUNDS (6x 7 sec) */
-function startRounds(){
 
-    round = 0;
+/* =========================
+   BOX MOVEMENT
+========================= */
+function moveBox() {
 
-    function nextRound(){
+    if (!gameActive) return;
 
-        if(round >= 6){
-            alert("game done (placeholder ending)");
-            return;
-        }
+    const x = Math.random() * (window.innerWidth - 200);
+    const y = Math.random() * (window.innerHeight - 200);
 
-        let timeLeft = 7;
-        timerEl.innerText = timeLeft;
+    dodgeBox.style.left = x + "px";
+    dodgeBox.style.top = y + "px";
 
-        const countdown = setInterval(() => {
+    setTimeout(moveBox, 1200);
+}
 
-            timeLeft--;
-            timerEl.innerText = timeLeft;
 
-            if(timeLeft <= 0){
-                clearInterval(countdown);
+/* =========================
+   SNAPSHOTS (FIXED INTERVAL)
+========================= */
+function startSnapshots() {
 
-                takeSnapshot();
-
-                round++;
-                nextRound();
-            }
-
-        },1000);
+    if (snapshotInterval) {
+        clearInterval(snapshotInterval);
     }
 
-    nextRound();
+    snapshotInterval = setInterval(() => {
+        if (!gameActive) return;
+        takeSnapshot();
+    }, 7000);
 }
 
-/* SNAPSHOT + FLASH */
-function takeSnapshot(){
 
-    flash.style.opacity = 1;
+/* =========================
+   SNAPSHOT LOGIC
+========================= */
+function takeSnapshot() {
 
-    setTimeout(() => {
-        flash.style.opacity = 0;
-    }, 300);
+    canvas.width = webcamVideo.videoWidth;
+    canvas.height = webcamVideo.videoHeight;
 
-    setTimeout(() => {
-        canvas.width = webcamVideo.videoWidth;
-        canvas.height = webcamVideo.videoHeight;
+    ctx.drawImage(webcamVideo, 0, 0);
 
-        ctx.drawImage(webcamVideo,0,0);
-    }, 1000); // 1 sec “pause feel”
+    const xRatio = canvas.width / window.innerWidth;
+    const yRatio = canvas.height / window.innerHeight;
+
+    const box = dodgeBox.getBoundingClientRect();
+
+    const sx = box.left * xRatio;
+    const sy = box.top * yRatio;
+    const sw = box.width * xRatio;
+    const sh = box.height * yRatio;
+
+    const imageData = ctx.getImageData(sx, sy, sw, sh);
+
+    let hit = 0;
+
+    for (let i = 0; i < imageData.data.length; i += 4) {
+        if (imageData.data[i] > 20) hit++;
+    }
+
+    const threshold = imageData.data.length * 0.05;
+
+    if (hit > threshold) {
+        fragments.push(Date.now());
+    } else {
+        wins++;
+    }
+
+    checkGameEnd();
 }
 
-/* BOX MOVE */
-function moveBox(){
 
-    if(!gameActive) return;
+/* =========================
+   END CONDITION
+========================= */
+function checkGameEnd() {
 
-    dodgeBox.style.left = Math.random()*80+"vw";
-    dodgeBox.style.top = Math.random()*80+"vh";
+    if (wins >= 5) {
 
-    setTimeout(moveBox,1200);
+        gameActive = false;
+
+        alert("Fragments collected... returning to The Others");
+
+        gameScreen.style.display = "none";
+
+        currentVideo = 0;
+        playVideo(currentVideo);
+    }
 }

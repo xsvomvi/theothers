@@ -1,58 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Others</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Others</title>
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-    <!-- LOGO -->
-    <div class="logo-container">
-        <video id="logoVideo" autoplay muted loop playsinline>
-            <source src="videos/logo.mov">
-        </video>
+<!-- LOGO -->
+<div class="logo-container">
+    <video id="logoVideo" autoplay muted loop playsinline>
+        <source src="videos/logo.mov">
+    </video>
+</div>
+
+<!-- START -->
+<div id="startScreen">
+    <p id="startText">SCAN FINGERPRINT TO START</p>
+    <img src="images/fingerprint.png" id="fingerprint">
+</div>
+
+<!-- EXPERIENCE -->
+<div id="experience">
+
+    <div class="video-wrapper">
+        <video id="mainVideo" playsinline></video>
+        <button id="continueBtn">continue</button>
     </div>
 
-    <!-- START -->
-    <div id="startScreen">
-        <p id="startText">SCAN FINGERPRINT TO START</p>
-        <img src="images/fingerprint.png" id="fingerprint">
+</div>
+
+<!-- OVERLAY -->
+<div id="observerOverlay"></div>
+
+<!-- GAME -->
+<div id="gameScreen">
+
+    <div id="timer">7</div>
+
+    <video id="webcamVideo" autoplay playsinline></video>
+
+    <div id="dodgeBox">
+        <img src="images/observers.png" id="boxLogo">
     </div>
 
-    <!-- EXPERIENCE -->
-    <div id="experience">
+    <div id="flash"></div>
 
-        <div class="video-wrapper">
-            <video id="mainVideo" playsinline></video>
-            <button id="continueBtn">continue</button>
-        </div>
+    <canvas id="snapshotCanvas"></canvas>
 
-    </div>
+</div>
 
-    <!-- OVERLAYS -->
-    <div id="observerOverlay"></div>
-
-    <!-- GAME -->
-    <div id="gameScreen">
-
-        <div id="timer">7</div>
-
-        <video id="webcamVideo" autoplay playsinline></video>
-
-        <div id="dodgeBox">
-            <img src="images/observers.png" id="boxLogo">
-        </div>
-
-        <div id="flash"></div>
-
-        <canvas id="snapshotCanvas"></canvas>
-
-    </div>
-
-    <script src="script.js"></script>
+<script src="script.js"></script>
 
 </body>
 </html>
