@@ -31,6 +31,21 @@ const messageInput = document.getElementById("messageInput");
 const messageBtn = document.getElementById("messageBtn");
 const controllerArea = document.getElementById("controllerArea");
 const controllerDot = document.getElementById("controllerDot");
+const controllerInstruction = document.getElementById("controllerInstruction");
+
+/* =========================
+   SCHERMGROOTTE VAN APPARAAT 1
+========================= */
+let screenW = 1920;
+let screenH = 1080;
+
+onValue(ref(db, "game/screen"), (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+        screenW = data.w;
+        screenH = data.h;
+    }
+});
 
 /* =========================
    STAP 1 → 2
@@ -70,8 +85,21 @@ messageBtn.addEventListener("click", () => {
     // Luister op game status van apparaat 1
     onValue(ref(db, "game/status"), (snapshot) => {
         const status = snapshot.val();
+        console.log("game status:", status);
+
+        if (status === "pregame") {
+            waitScreen.classList.add("hidden");
+            controllerScreen.classList.remove("hidden");
+            controllerInstruction.innerText = "get ready. the experience is about to begin.";
+            controllerArea.style.opacity = "0.2";
+            controllerArea.style.pointerEvents = "none";
+        }
 
         if (status === "started") {
+            controllerInstruction.innerText = "move the frame. find the perfect shot.";
+            controllerArea.style.opacity = "1";
+            controllerArea.style.pointerEvents = "auto";
+            // Zorg dat controllerScreen zichtbaar is ook als pregame gemist werd
             waitScreen.classList.add("hidden");
             controllerScreen.classList.remove("hidden");
         }
@@ -119,13 +147,10 @@ function handleMove(clientX, clientY) {
     controllerDot.style.left = (fracX * 100) + "%";
     controllerDot.style.top = (fracY * 100) + "%";
 
-    // Omrekenen naar schermcoördinaten
-    const targetW = 1920;
-    const targetH = 1080;
+    // Omrekenen naar schermcoördinaten van apparaat 1
     const padding = 20;
-
-    const x = padding + fracX * (targetW - 400 - padding * 2);
-    const y = padding + fracY * (targetH - 300 - padding * 2);
+    const x = padding + fracX * (screenW - 400 - padding * 2);
+    const y = padding + fracY * (screenH - 300 - padding * 2);
 
     set(ref(db, "game/boxPosition"), { x, y });
 }

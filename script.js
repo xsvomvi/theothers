@@ -49,7 +49,8 @@ function resetFirebase() {
     set(ref(db, "game"), {
         status: "waiting",
         boxPosition: { x: window.innerWidth / 2, y: window.innerHeight / 2 },
-        message: ""
+        message: "",
+        screen: { w: window.innerWidth, h: window.innerHeight }
     });
 }
 
@@ -268,6 +269,9 @@ function startPreGameCountdown() {
     dodgeBox.style.display = "none";
     preGameOverlay.style.display = "flex";
 
+    // Controller ziet nu al dat het bijna begint
+    setGameStatus("pregame");
+
     let timeLeft = 7;
     preGameTimer.innerText = timeLeft;
 
@@ -299,7 +303,12 @@ function startActualGame() {
     dodgeBox.style.top = (window.innerHeight / 2 - 80) + "px";
     dodgeBox.style.display = "flex";
 
-    // Start Firebase sync — controller beweegt het vakje
+    // Stuur schermgrootte mee zodat controller correct kan schalen
+    set(ref(db, "game/screen"), {
+        w: window.innerWidth,
+        h: window.innerHeight
+    });
+
     listenToBoxPosition();
     setGameStatus("started");
 
@@ -663,7 +672,6 @@ function showEndScreen() {
         endPolaroids.appendChild(el);
     });
 
-    // Gebruik de zin van de controller, of de default
     const message = window.__controllerMessage || "you have been seen by the others.";
 
     setTimeout(() => {
