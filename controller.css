@@ -1,0 +1,165 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    width:100vw;
+    height:100vh;
+    background:black;
+    color:white;
+    font-family:'Courier New', monospace;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    overflow:hidden;
+}
+
+#introScreen,
+#messageScreen,
+#waitScreen,
+#controllerScreen,
+#doneScreen{
+    width:100vw;
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    gap:2rem;
+    padding:2rem;
+}
+
+#controllerIntroImg{
+    width:min(70vw, 600px);
+    height:auto;
+    object-fit:contain;
+}
+
+button{
+    padding:0.8rem 2rem;
+    background:transparent;
+    border:1px solid white;
+    color:white;
+    font-size:1rem;
+    letter-spacing:0.3rem;
+    text-transform:uppercase;
+    font-family:'Courier New', monospace;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+button:hover{
+    opacity:0.7;
+}
+
+#messagePrompt{
+    font-size:0.9rem;
+    letter-spacing:0.2rem;
+    text-align:center;
+    max-width:500px;
+    line-height:2;
+    opacity:0.8;
+}
+
+#messageInput{
+    background:transparent;
+    border:none;
+    border-bottom:1px solid white;
+    color:white;
+    font-family:'Courier New', monospace;
+    font-size:1.2rem;
+    letter-spacing:0.1rem;
+    padding:0.5rem 0;
+    width:min(80vw, 500px);
+    text-align:center;
+    outline:none;
+}
+
+#messageInput::placeholder{
+    opacity:0.3;
+}
+
+#waitText,
+#doneText{
+    font-size:1rem;
+    letter-spacing:0.3rem;
+    text-transform:uppercase;
+    text-align:center;
+    opacity:0.6;
+}
+
+#controllerInstruction{
+    font-size:0.85rem;
+    letter-spacing:0.25rem;
+    text-transform:uppercase;
+    opacity:0.5;
+}
+
+#controllerArea{
+    width:min(80vw, 500px);
+    height:min(55vh, 380px);
+    border:1px solid rgba(255,255,255,0.3);
+    position:relative;
+    cursor:crosshair;
+    touch-action:none;
+    background:rgba(255,255,255,0.02);
+}
+
+#controllerDot{
+    width:16px;
+    height:16px;
+    background:white;
+    border-radius:50%;
+    position:absolute;
+    transform:translate(-50%, -50%);
+    top:50%;
+    left:50%;
+    pointer-events:none;
+    box-shadow:0 0 8px rgba(255,255,255,0.6);
+}
+
+.hidden{
+    display:none !important;
+}
+
+#messageHint{
+    display:block;
+    opacity:0.45;
+    font-size:0.8rem;
+    letter-spacing:0.15rem;
+    margin-top:0.5rem;
+}
+
+#suggestions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    justify-content:center;
+    max-width:520px;
+}
+
+.suggestion{
+    padding:0.5rem 1rem;
+    background:transparent;
+    border:1px solid rgba(255,255,255,0.25);
+    color:rgba(255,255,255,0.55);
+    font-family:'Courier New', monospace;
+    font-size:0.7rem;
+    letter-spacing:0.1rem;
+    cursor:pointer;
+    transition:0.2s;
+    text-transform:none;
+}
+
+.suggestion:hover{
+    border-color:rgba(255,255,255,0.7);
+    color:white;
+}
+
+.suggestion.selected{
+    border-color:white;
+    color:white;
+    background:rgba(255,255,255,0.06);
+}

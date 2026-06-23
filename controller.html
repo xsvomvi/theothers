@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Others — Observer</title>
+<link rel="stylesheet" href="controller.css">
+</head>
+
+<body>
+
+<!-- STAP 1: INTRO -->
+<div id="introScreen">
+    <img src="images/controller_intro.png" id="controllerIntroImg">
+    <button id="introBtn">i'm ready to shoot</button>
+</div>
+
+<!-- STAP 2: ZIN INTYPEN -->
+<div id="messageScreen" class="hidden">
+    <p id="messagePrompt">you're about to take a photo of someone.<br>write a caption for their polaroid —<br>something genuine. something kind.<br><span id="messageHint">they'll read this. make it count.</span></p>
+    
+    <input type="text" id="messageInput" maxlength="80" placeholder="write your own caption...">
+
+    <div id="suggestions">
+        <button class="suggestion">you look like you belong in a film.</button>
+        <button class="suggestion">there's something about you that's hard to ignore.</button>
+        <button class="suggestion">you carry yourself like you know something others don't.</button>
+        <button class="suggestion">the room feels different when you're in it.</button>
+        <button class="suggestion">you have the kind of energy people remember.</button>
+        <button class="suggestion">your style is doing something right.</button>
+        <button class="suggestion">you look exactly like yourself. that's rare.</button>
+        <button class="suggestion">something about you is very easy to photograph.</button>
+    </div>
+
+    <button id="messageBtn">send it</button>
+</div>
+
+<!-- STAP 3: WACHTEN TOT GAME START -->
+<div id="waitScreen" class="hidden">
+    <p id="waitText">[waiting for the experience to begin]</p>
+</div>
+
+<!-- STAP 4: CONTROLLER -->
+<div id="controllerScreen" class="hidden">
+    <p id="controllerInstruction">move the frame. find the perfect shot.</p>
+    <div id="controllerArea">
+        <div id="controllerDot"></div>
+    </div>
+</div>
+
+<!-- STAP 5: KLAAR -->
+<div id="doneScreen" class="hidden">
+    <p id="doneText">shot taken.<br>they'll see it soon.</p>
+</div>
+
+<script type="module" src="controller.js"></script>
+
+</body>
+</html>

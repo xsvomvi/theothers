@@ -61,13 +61,13 @@ body{
 }
 
 /* LOGO */
-.logo-container {
-    position: absolute;
-    top: 5vh;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 100;
-    pointer-events: none; /* ← dit was het fingerprint-probleem */
+.logo-container{
+    position:absolute;
+    top:5vh;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:100;
+    pointer-events:none;
 }
 
 #logoVideo{
@@ -139,7 +139,7 @@ body{
     position:fixed;
     inset:0;
     pointer-events:none;
-    z-index:10000;   
+    z-index:10000;
 }
 
 .polaroid{
@@ -156,7 +156,7 @@ body{
     display:block;
     width:190px;
     height:auto;
-    object-fit:cover;
+    object-fit:contain;
     filter:contrast(1.05) brightness(0.92);
 }
 
@@ -238,20 +238,16 @@ body{
 ========================= */
 #dodgeBox{
     position:absolute;
-
     min-width:120px;
     min-height:120px;
-
     border:1px solid rgba(255,255,255,0.6);
     background:rgba(255,255,255,0.06);
     box-shadow:0 0 10px rgba(255,255,255,0.12);
     backdrop-filter:blur(2px);
-
     display:none;
     justify-content:center;
     align-items:flex-start;
-
-    transition:top 0.6s ease, left 0.6s ease, width 0.4s ease, height 0.4s ease;
+    transition:top 0.3s ease, left 0.3s ease, width 0.4s ease, height 0.4s ease;
 }
 
 #boxLogo{
@@ -280,12 +276,10 @@ body{
     position:absolute;
     inset:0;
     z-index:2000;
-
     display:none;
     flex-direction:column;
     justify-content:center;
     align-items:center;
-
     background:rgba(0,0,0,0.4);
     backdrop-filter:blur(3px);
 }
@@ -313,12 +307,10 @@ body{
     position:fixed;
     inset:0;
     background:black;
-
     display:none;
     flex-direction:column;
     justify-content:center;
     align-items:center;
-
     z-index:2000;
 }
 
@@ -354,13 +346,26 @@ body{
     position:fixed;
     inset:0;
     background:black;
-
     display:none;
     flex-direction:column;
     justify-content:center;
     align-items:center;
-
     z-index:3000;
+}
+
+#shutdownImage{
+    width:min(70vw, 900px);
+    height:auto;
+    object-fit:contain;
+    margin-bottom:2rem;
+    animation:shutdownFlicker 2.5s ease-in-out infinite;
+}
+
+@keyframes shutdownFlicker{
+    0%{   opacity:1; }
+    45%{  opacity:0.08; }
+    55%{  opacity:0.08; }
+    100%{ opacity:1; }
 }
 
 #readMessageBtn{
@@ -379,7 +384,7 @@ body{
 }
 
 #readMessageBtn:hover{
-    opacity:0.7;
+    opacity:0.7 !important;
 }
 
 /* =========================
@@ -406,11 +411,11 @@ body{
 
 #othersEyeLogo{
     position:absolute;
-    top:10vh;         
+    top:6vh;
     left:50%;
     transform:translateX(-50%);
     z-index:9999;
-    width:400px;     
+    width:220px;
     pointer-events:none;
 }
 
@@ -418,21 +423,6 @@ body{
     width:100%;
     height:auto;
     object-fit:contain;
-}
-
-#shutdownImage{
-    width:min(70vw, 900px);
-    height:auto;
-    object-fit:contain;
-    margin-bottom:2rem;
-    animation: shutdownFlicker 2.5s ease-in-out infinite;
-}
-
-@keyframes shutdownFlicker{
-    0%{   opacity:1; }
-    45%{  opacity:0.08; }
-    55%{  opacity:0.08; }
-    100%{ opacity:1; }
 }
 
 /* =========================

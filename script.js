@@ -1,3 +1,61 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+
+/* =========================
+   FIREBASE
+========================= */
+const firebaseConfig = {
+    apiKey: "AIzaSyD6KYh4VL5yepFU61vV9FcnBNKRT2ZMdBQ",
+    authDomain: "the-others-experience.firebaseapp.com",
+    databaseURL: "https://the-others-experience-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "the-others-experience",
+    storageBucket: "the-others-experience.firebasestorage.app",
+    messagingSenderId: "834987892004",
+    appId: "1:834987892004:web:af4d1126191d083ed0e7b1"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+function listenToBoxPosition() {
+    onValue(ref(db, "game/boxPosition"), (snapshot) => {
+        const data = snapshot.val();
+        if (!data || !gameActive) return;
+
+        const boxW = dodgeBox.offsetWidth;
+        const boxH = dodgeBox.offsetHeight;
+        const padding = 20;
+
+        const x = Math.max(padding, Math.min(data.x, window.innerWidth - boxW - padding));
+        const y = Math.max(padding, Math.min(data.y, window.innerHeight - boxH - padding));
+
+        dodgeBox.style.left = x + "px";
+        dodgeBox.style.top = y + "px";
+    });
+}
+
+function listenToMessage() {
+    onValue(ref(db, "game/message"), (snapshot) => {
+        const msg = snapshot.val();
+        if (msg) window.__controllerMessage = msg;
+    });
+}
+
+function setGameStatus(status) {
+    set(ref(db, "game/status"), status);
+}
+
+function resetFirebase() {
+    set(ref(db, "game"), {
+        status: "waiting",
+        boxPosition: { x: window.innerWidth / 2, y: window.innerHeight / 2 },
+        message: ""
+    });
+}
+
+/* =========================
+   VIDEOS
+========================= */
 const videos = [
     "videos/innervoice_01.mov",
     "videos/innervoice_02.mov",
@@ -15,7 +73,6 @@ const othersVideos = [
 
 let othersIndex = 0;
 let othersActive = false;
-
 let currentVideo = 0;
 
 /* OBSERVERS */
@@ -26,12 +83,12 @@ let observerEnabled = false;
 /* GAME */
 let round = 0;
 const TOTAL_ROUNDS = 6;
-
 let gameActive = false;
 let heartbeatStarted = false;
 
 /* SNAPSHOTS */
-window.snapshots = []; // window scope zodat je het makkelijk kunt debuggen in console
+window.snapshots = [];
+window.__controllerMessage = "";
 
 /* =========================
    DOM
@@ -60,23 +117,27 @@ const flash = document.getElementById("flash");
 const heartbeatSound = document.getElementById("heartbeatSound");
 const shutterSound = document.getElementById("shutterSound");
 
-/* TUTORIAL + PRE-GAME */
 const tutorialScreen = document.getElementById("tutorialScreen");
 const readyBtn = document.getElementById("readyBtn");
 
 const preGameOverlay = document.getElementById("preGameOverlay");
 const preGameTimer = document.getElementById("preGameTimer");
 
-/* SHUTDOWN */
 const shutdownScreen = document.getElementById("shutdownScreen");
 const readMessageBtn = document.getElementById("readMessageBtn");
 
 const othersEyeLogo = document.getElementById("othersEyeLogo");
 
+const endScreen = document.getElementById("endScreen");
+const endPolaroids = document.getElementById("endPolaroids");
+const endText = document.getElementById("endText");
+
 /* =========================
    START
 ========================= */
 fingerprint.addEventListener("click", () => {
+    resetFirebase();
+    listenToMessage();
     startScreen.style.display = "none";
     experience.style.display = "flex";
     playVideo(currentVideo);
@@ -117,13 +178,10 @@ continueBtn.addEventListener("click", () => {
     buttonSound.play();
 
     if (othersActive) {
-
         othersIndex++;
-
         if (othersIndex < othersVideos.length) {
             playOthersVideo(othersIndex);
         }
-
         return;
     }
 
@@ -156,10 +214,8 @@ function spawnObservers() {
     const img = document.createElement("img");
     img.src = "images/observers.png";
     img.classList.add("observer");
-
     img.style.left = Math.random() * 100 + "%";
     img.style.top = Math.random() * 100 + "%";
-
     overlay.appendChild(img);
 }
 
@@ -239,14 +295,14 @@ function startActualGame() {
 
     updateBoxSize();
 
-    const x = Math.random() * (window.innerWidth - 200);
-    const y = Math.random() * (window.innerHeight - 200);
-
-    dodgeBox.style.left = x + "px";
-    dodgeBox.style.top = y + "px";
+    dodgeBox.style.left = (window.innerWidth / 2 - 100) + "px";
+    dodgeBox.style.top = (window.innerHeight / 2 - 80) + "px";
     dodgeBox.style.display = "flex";
 
-    moveBox();
+    // Start Firebase sync — controller beweegt het vakje
+    listenToBoxPosition();
+    setGameStatus("started");
+
     startRounds();
 }
 
@@ -313,17 +369,14 @@ function snapshotSequence() {
 
     gameActive = false;
 
-    // Sla de boxRect OP op het moment van de flash (niet 250ms later)
     const boxRect = dodgeBox.getBoundingClientRect();
 
     setTimeout(() => {
 
-        // Volledige webcamframe tekenen
         canvas.width = webcamVideo.videoWidth || 640;
         canvas.height = webcamVideo.videoHeight || 480;
         ctx.drawImage(webcamVideo, 0, 0, canvas.width, canvas.height);
 
-        // Schaalverhouding scherm → videoresolutie
         const scaleX = canvas.width / window.innerWidth;
         const scaleY = canvas.height / window.innerHeight;
 
@@ -332,17 +385,12 @@ function snapshotSequence() {
         const cropW = Math.min(boxRect.width * scaleX, canvas.width - cropX);
         const cropH = Math.min(boxRect.height * scaleY, canvas.height - cropY);
 
-        // Crop canvas
         const cropCanvas = document.createElement("canvas");
         cropCanvas.width = cropW;
         cropCanvas.height = cropH;
         const cropCtx = cropCanvas.getContext("2d");
 
-        cropCtx.drawImage(
-            canvas,
-            cropX, cropY, cropW, cropH,
-            0, 0, cropW, cropH
-        );
+        cropCtx.drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
 
         const dataURL = cropCanvas.toDataURL("image/jpeg", 0.85);
         window.snapshots.push(dataURL);
@@ -359,36 +407,11 @@ function snapshotSequence() {
 }
 
 /* =========================
-   BOX MOVEMENT
-========================= */
-function moveBox() {
-
-    if (!gameActive) {
-        setTimeout(moveBox, 200);
-        return;
-    }
-
-    const boxW = dodgeBox.offsetWidth;
-    const boxH = dodgeBox.offsetHeight;
-    const padding = 20; // minimale afstand tot de rand
-
-    const x = padding + Math.random() * (window.innerWidth - boxW - padding * 2);
-    const y = padding + Math.random() * (window.innerHeight - boxH - padding * 2);
-
-    dodgeBox.style.left = x + "px";
-    dodgeBox.style.top = y + "px";
-
-    setTimeout(moveBox, 1200);
-}
-
-/* =========================
    BOX SIZE
 ========================= */
 function updateBoxSize() {
-
     const progress = round / (TOTAL_ROUNDS - 1);
     const size = 24 + (44 - 24) * progress;
-
     dodgeBox.style.width = size + "vw";
     dodgeBox.style.height = (size * 0.65) + "vw";
 }
@@ -402,6 +425,7 @@ function endGame() {
     heartbeatSound.pause();
     dodgeBox.style.display = "none";
 
+    setGameStatus("ended");
     startShutdownTransition();
 }
 
@@ -476,14 +500,12 @@ function playOthersVideo(index) {
 
     mainVideo.onended = () => {
         if (index === othersVideos.length - 1) {
-            // theothers_04 klaar → toon "listen to the whispers" knop
             continueBtn.innerText = "listen to the whispers";
             continueBtn.style.display = "block";
 
-            // Eenmalige click handler voor deze speciale knop
             continueBtn.onclick = () => {
                 continueBtn.style.display = "none";
-                continueBtn.innerText = "continue"; // reset voor veiligheid
+                continueBtn.innerText = "continue";
                 continueBtn.onclick = null;
                 playConnectionVideo();
             };
@@ -508,7 +530,6 @@ function playConnectionVideo() {
     mainVideo.oncanplay = () => mainVideo.play();
 
     mainVideo.onended = () => {
-        // Fade het filmpje weg
         mainVideo.style.transition = "opacity 1.5s ease";
         mainVideo.style.opacity = "0";
 
@@ -526,7 +547,7 @@ function playConnectionVideo() {
    POLAROID SYSTEEM
 ========================= */
 function getRandomPolaroidPosition() {
-    const pw = 200; // iets groter dan voorheen (was 180)
+    const pw = 200;
     const ph = 190;
     const padding = 24;
     const W = window.innerWidth;
@@ -591,7 +612,6 @@ function spawnPolaroidsDuringVideo() {
     let polaroidIndex = 0;
     const duration = mainVideo.duration;
 
-    // Verdeel over de video: 10%, 22%, 35%, 50%, 63%, 76%
     const spawnFractions = [0.10, 0.22, 0.35, 0.50, 0.63, 0.76];
 
     function onTimeUpdate() {
@@ -602,9 +622,8 @@ function spawnPolaroidsDuringVideo() {
         }
 
         const fraction = mainVideo.currentTime / duration;
-        const targetFraction = spawnFractions[polaroidIndex];
 
-        if (fraction >= targetFraction) {
+        if (fraction >= spawnFractions[polaroidIndex]) {
             spawnPolaroid(window.snapshots[polaroidIndex], polaroidIndex);
             polaroidIndex++;
         }
@@ -613,17 +632,9 @@ function spawnPolaroidsDuringVideo() {
     mainVideo.addEventListener("timeupdate", onTimeUpdate);
 }
 
-function clearPolaroids() {
-    polaroidOverlay.innerHTML = "";
-}
-
 /* =========================
    END SCREEN
 ========================= */
-const endScreen = document.getElementById("endScreen");
-const endPolaroids = document.getElementById("endPolaroids");
-const endText = document.getElementById("endText");
-
 function showEndScreen() {
 
     endScreen.style.display = "flex";
@@ -652,13 +663,15 @@ function showEndScreen() {
         endPolaroids.appendChild(el);
     });
 
-    // Fade achtergrond naar wit
+    // Gebruik de zin van de controller, of de default
+    const message = window.__controllerMessage || "you have been seen by the others.";
+
     setTimeout(() => {
         endScreen.style.backgroundColor = "white";
     }, 100);
 
-    // Fade tekst in na achtergrond
     setTimeout(() => {
+        endText.innerText = message;
         endText.style.color = "black";
         endText.style.opacity = "1";
     }, 2500);
