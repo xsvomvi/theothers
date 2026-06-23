@@ -451,12 +451,11 @@ body{
 }
 
 #endPolaroids{
-    display:flex;
-    flex-wrap:wrap;
+    display:grid;
+    grid-template-columns:repeat(3, auto);
     justify-content:center;
     align-items:center;
     gap:20px;
-    max-width:90vw;
     margin-bottom:2.5rem;
 }
 
