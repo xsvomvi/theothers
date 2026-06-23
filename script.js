@@ -475,7 +475,6 @@ function playOthersVideo(index) {
     mainVideo.oncanplay = () => mainVideo.play();
 
     mainVideo.onended = () => {
-        // Na het laatste filmpje → end screen
         if (index === othersVideos.length - 1) {
             experience.style.display = "none";
             othersEyeLogo.classList.add("hidden");
@@ -490,12 +489,6 @@ function playOthersVideo(index) {
             mainVideo.removeEventListener("loadedmetadata", onMeta);
             spawnPolaroidsDuringVideo();
         });
-    }
-}
-
-    // theothers_04.mov = index 3
-    if (index === 4) {
-        clearPolaroids();
     }
 }
 
