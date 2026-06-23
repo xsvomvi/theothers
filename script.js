@@ -476,9 +476,17 @@ function playOthersVideo(index) {
 
     mainVideo.onended = () => {
         if (index === othersVideos.length - 1) {
-            experience.style.display = "none";
-            othersEyeLogo.classList.add("hidden");
-            showEndScreen();
+            // theothers_04 klaar → toon "listen to the whispers" knop
+            continueBtn.innerText = "listen to the whispers";
+            continueBtn.style.display = "block";
+
+            // Eenmalige click handler voor deze speciale knop
+            continueBtn.onclick = () => {
+                continueBtn.style.display = "none";
+                continueBtn.innerText = "continue"; // reset voor veiligheid
+                continueBtn.onclick = null;
+                playConnectionVideo();
+            };
         } else {
             continueBtn.style.display = "block";
         }
@@ -490,6 +498,28 @@ function playOthersVideo(index) {
             spawnPolaroidsDuringVideo();
         });
     }
+}
+
+function playConnectionVideo() {
+
+    mainVideo.src = "videos/connection.mov";
+    mainVideo.load();
+
+    mainVideo.oncanplay = () => mainVideo.play();
+
+    mainVideo.onended = () => {
+        // Fade het filmpje weg
+        mainVideo.style.transition = "opacity 1.5s ease";
+        mainVideo.style.opacity = "0";
+
+        setTimeout(() => {
+            mainVideo.style.opacity = "1";
+            mainVideo.style.transition = "";
+            experience.style.display = "none";
+            othersEyeLogo.classList.add("hidden");
+            showEndScreen();
+        }, 1500);
+    };
 }
 
 /* =========================
@@ -593,15 +623,12 @@ function clearPolaroids() {
 const endScreen = document.getElementById("endScreen");
 const endPolaroids = document.getElementById("endPolaroids");
 const endText = document.getElementById("endText");
-const connectionSound = new Audio("sounds/connection.mp3");
 
 function showEndScreen() {
 
-    // Zet endScreen klaar
     endScreen.style.display = "flex";
     endScreen.style.backgroundColor = "black";
 
-    // Kopieer polaroids naar endPolaroids, horizontaal gecentreerd
     endPolaroids.innerHTML = "";
 
     window.snapshots.forEach((dataURL, i) => {
@@ -624,10 +651,6 @@ function showEndScreen() {
 
         endPolaroids.appendChild(el);
     });
-
-    // Speel geluid af
-    connectionSound.volume = 0.8;
-    connectionSound.play().catch(() => {});
 
     // Fade achtergrond naar wit
     setTimeout(() => {
