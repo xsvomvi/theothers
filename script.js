@@ -368,8 +368,12 @@ function moveBox() {
         return;
     }
 
-    const x = Math.random() * (window.innerWidth - 200);
-    const y = Math.random() * (window.innerHeight - 200);
+    const boxW = dodgeBox.offsetWidth;
+    const boxH = dodgeBox.offsetHeight;
+    const padding = 20; // minimale afstand tot de rand
+
+    const x = padding + Math.random() * (window.innerWidth - boxW - padding * 2);
+    const y = padding + Math.random() * (window.innerHeight - boxH - padding * 2);
 
     dodgeBox.style.left = x + "px";
     dodgeBox.style.top = y + "px";
@@ -493,37 +497,28 @@ function playOthersVideo(index) {
    POLAROID SYSTEEM
 ========================= */
 function getRandomPolaroidPosition() {
-    const pw = 180;
-    const ph = 170;
+    const pw = 200; // iets groter dan voorheen (was 180)
+    const ph = 190;
+    const padding = 24;
     const W = window.innerWidth;
     const H = window.innerHeight;
 
-    // Middenvak vermijden (waar de video speelt)
-    const midX1 = W * 0.10;
-    const midX2 = W * 0.90;
-    const midY1 = H * 0.15;
-    const midY2 = H * 0.85;
+    const midX1 = W * 0.28;
+    const midX2 = W * 0.72;
+    const midY1 = H * 0.22;
+    const midY2 = H * 0.78;
 
-    // Kies een van de 4 hoekzones
-    const zones = [
-        // links boven
-        { x: [20, W * 0.22], y: [20, H * 0.40] },
-        // rechts boven
-        { x: [W * 0.78, W - pw - 20], y: [20, H * 0.40] },
-        // links onder
-        { x: [20, W * 0.22], y: [H * 0.60, H - ph - 20] },
-        // rechts onder
-        { x: [W * 0.78, W - pw - 20], y: [H * 0.60, H - ph - 20] },
-        // boven midden
-        { x: [W * 0.35, W * 0.65 - pw], y: [20, H * 0.14] },
-        // onder midden
-        { x: [W * 0.35, W * 0.65 - pw], y: [H * 0.86, H - ph - 20] },
-    ];
+    let x, y, attempts = 0;
 
-    const zone = zones[Math.floor(Math.random() * zones.length)];
-
-    const x = zone.x[0] + Math.random() * Math.max(0, zone.x[1] - zone.x[0]);
-    const y = zone.y[0] + Math.random() * Math.max(0, zone.y[1] - zone.y[0]);
+    do {
+        x = padding + Math.random() * (W - pw - padding * 2);
+        y = padding + Math.random() * (H - ph - padding * 2);
+        attempts++;
+    } while (
+        x + pw > midX1 && x < midX2 &&
+        y + ph > midY1 && y < midY2 &&
+        attempts < 30
+    );
 
     return { x, y };
 }

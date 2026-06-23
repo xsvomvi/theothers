@@ -154,8 +154,8 @@ body{
 
 .polaroid img{
     display:block;
-    width:160px;
-    height:110px;
+    width:190px;
+    height:130px;  
     object-fit:cover;
     filter:contrast(1.05) brightness(0.92);
 }
