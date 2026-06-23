@@ -340,6 +340,7 @@ body{
     font-family:'Courier New', monospace;
     cursor:pointer;
     transition:0.3s;
+    z-index:10001;
 }
 
 #readyBtn:hover{
@@ -405,11 +406,11 @@ body{
 
 #othersEyeLogo{
     position:absolute;
-    top:6vh;         
+    top:10vh;         
     left:50%;
     transform:translateX(-50%);
     z-index:9999;
-    width:220px;     
+    width:400px;     
     pointer-events:none;
 }
 
