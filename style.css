@@ -434,3 +434,51 @@ body{
     55%{  opacity:0.08; }
     100%{ opacity:1; }
 }
+
+/* =========================
+   END SCREEN
+========================= */
+#endScreen{
+    position:fixed;
+    inset:0;
+    background:black;
+    display:none;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    z-index:20000;
+    transition:background-color 2s ease;
+}
+
+#endPolaroids{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    align-items:center;
+    gap:20px;
+    max-width:90vw;
+    margin-bottom:2.5rem;
+}
+
+#endPolaroids .polaroid{
+    position:static;
+    opacity:0;
+    animation:polaroidFadeIn 0.6s ease forwards;
+    transform:rotate(var(--rot));
+}
+
+@keyframes polaroidFadeIn{
+    0%{   opacity:0; transform:translateY(20px) rotate(var(--rot)); }
+    100%{ opacity:1; transform:translateY(0) rotate(var(--rot)); }
+}
+
+#endText{
+    color:black;
+    font-family:'Courier New', monospace;
+    font-size:1rem;
+    letter-spacing:0.3rem;
+    text-transform:uppercase;
+    text-align:center;
+    opacity:0;
+    transition:opacity 1.5s ease;
+}

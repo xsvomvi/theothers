@@ -475,17 +475,23 @@ function playOthersVideo(index) {
     mainVideo.oncanplay = () => mainVideo.play();
 
     mainVideo.onended = () => {
-        continueBtn.style.display = "block";
+        // Na het laatste filmpje → end screen
+        if (index === othersVideos.length - 1) {
+            experience.style.display = "none";
+            othersEyeLogo.classList.add("hidden");
+            showEndScreen();
+        } else {
+            continueBtn.style.display = "block";
+        }
     };
 
-    // theothers_02.mov = index 1 → polaroids spawnen
     if (index === 1) {
-        // Wacht tot duration bekend is via loadedmetadata
         mainVideo.addEventListener("loadedmetadata", function onMeta() {
             mainVideo.removeEventListener("loadedmetadata", onMeta);
             spawnPolaroidsDuringVideo();
         });
     }
+}
 
     // theothers_04.mov = index 3
     if (index === 4) {
@@ -586,4 +592,58 @@ function spawnPolaroidsDuringVideo() {
 
 function clearPolaroids() {
     polaroidOverlay.innerHTML = "";
+}
+
+/* =========================
+   END SCREEN
+========================= */
+const endScreen = document.getElementById("endScreen");
+const endPolaroids = document.getElementById("endPolaroids");
+const endText = document.getElementById("endText");
+const connectionSound = new Audio("sounds/connection.mp3");
+
+function showEndScreen() {
+
+    // Zet endScreen klaar
+    endScreen.style.display = "flex";
+    endScreen.style.backgroundColor = "black";
+
+    // Kopieer polaroids naar endPolaroids, horizontaal gecentreerd
+    endPolaroids.innerHTML = "";
+
+    window.snapshots.forEach((dataURL, i) => {
+        const el = document.createElement("div");
+        el.classList.add("polaroid");
+
+        const img = document.createElement("img");
+        img.src = dataURL;
+
+        const label = document.createElement("div");
+        label.classList.add("polaroid-label");
+        label.innerText = `subject_0${i + 1}`;
+
+        el.appendChild(img);
+        el.appendChild(label);
+
+        const rot = (Math.random() * 10 - 5).toFixed(1);
+        el.style.setProperty("--rot", rot + "deg");
+        el.style.animationDelay = (i * 0.15) + "s";
+
+        endPolaroids.appendChild(el);
+    });
+
+    // Speel geluid af
+    connectionSound.volume = 0.8;
+    connectionSound.play().catch(() => {});
+
+    // Fade achtergrond naar wit
+    setTimeout(() => {
+        endScreen.style.backgroundColor = "white";
+    }, 100);
+
+    // Fade tekst in na achtergrond
+    setTimeout(() => {
+        endText.style.color = "black";
+        endText.style.opacity = "1";
+    }, 2500);
 }
