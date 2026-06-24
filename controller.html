@@ -47,8 +47,13 @@
 <!-- STAP 4: CONTROLLER -->
 <div id="controllerScreen" class="hidden">
     <p id="controllerInstruction">move the frame. find the perfect shot.</p>
-    <div id="controllerArea">
-        <div id="controllerDot"></div>
+    <div id="controllerWrapper">
+        <!-- Live webcamfeed van apparaat 1 -->
+        <video id="remoteVideo" autoplay playsinline muted></video>
+        <!-- Controller vlak bovenop de video -->
+        <div id="controllerArea">
+            <div id="controllerDot"></div>
+        </div>
     </div>
 </div>
 

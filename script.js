@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+import { getDatabase, ref, onValue, set, push, remove } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
 
 /* =========================
    FIREBASE
@@ -17,6 +17,69 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
+/* =========================
+   WEBRTC
+========================= */
+let peerConnection = null;
+let localStream = null;
+
+const rtcConfig = {
+    iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" }
+    ]
+};
+
+async function startWebRTC(stream) {
+    // Schoon oude signaling data op
+    await set(ref(db, "webrtc"), null);
+
+    peerConnection = new RTCPeerConnection(rtcConfig);
+
+    // Voeg webcamstream toe aan de verbinding
+    stream.getTracks().forEach(track => {
+        peerConnection.addTrack(track, stream);
+    });
+
+    // Stuur ICE candidates naar Firebase
+    peerConnection.onicecandidate = (event) => {
+        if (event.candidate) {
+            push(ref(db, "webrtc/offerCandidates"), event.candidate.toJSON());
+        }
+    };
+
+    // Maak offer aan
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+
+    // Schrijf offer naar Firebase
+    await set(ref(db, "webrtc/offer"), {
+        type: offer.type,
+        sdp: offer.sdp
+    });
+
+    // Luister op answer van controller
+    onValue(ref(db, "webrtc/answer"), async (snapshot) => {
+        const answer = snapshot.val();
+        if (answer && peerConnection.signalingState !== "stable") {
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+        }
+    });
+
+    // Luister op ICE candidates van controller
+    onValue(ref(db, "webrtc/answerCandidates"), (snapshot) => {
+        snapshot.forEach((child) => {
+            const candidate = child.val();
+            if (candidate) {
+                peerConnection.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
+            }
+        });
+    });
+}
+
+/* =========================
+   FIREBASE HELPERS
+========================= */
 function listenToBoxPosition() {
     onValue(ref(db, "game/boxPosition"), (snapshot) => {
         const data = snapshot.val();
@@ -46,7 +109,6 @@ function setGameStatus(status) {
 }
 
 function resetFirebase() {
-    // message NIET resetten — die komt van de controller
     set(ref(db, "game/status"), "waiting");
     set(ref(db, "game/boxPosition"), {
         x: window.innerWidth / 2,
@@ -141,8 +203,11 @@ const endText = document.getElementById("endText");
    START
 ========================= */
 fingerprint.addEventListener("click", () => {
-    listenToMessage(); // eerst luisteren
-    resetFirebase();   // dan pas resetten (zonder message)
+    if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+    }
+    listenToMessage();
+    resetFirebase();
     startScreen.style.display = "none";
     experience.style.display = "flex";
     playVideo(currentVideo);
@@ -259,6 +324,10 @@ async function startWebcamGame() {
 
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
     webcamVideo.srcObject = stream;
+    localStream = stream;
+
+    // Start WebRTC zodat controller de webcam kan zien
+    await startWebRTC(stream);
 
     gameActive = false;
 
@@ -323,7 +392,7 @@ function startActualGame() {
 ========================= */
 function startRandomBlackouts() {
     function scheduleNext() {
-        const delay = 8000 + Math.random() * 12000; // elke 8-20 seconden
+        const delay = 8000 + Math.random() * 12000;
         setTimeout(() => {
             if (!gameActive) return;
             gameScreen.style.filter = "brightness(0)";
@@ -454,7 +523,7 @@ function endGame() {
     gameActive = false;
     heartbeatSound.pause();
     dodgeBox.style.display = "none";
-    gameScreen.style.filter = ""; // reset blackout filter
+    gameScreen.style.filter = "";
 
     setGameStatus("ended");
     startShutdownTransition();
@@ -627,13 +696,9 @@ function spawnPolaroid(dataURL, labelIndex) {
     el.style.top = y + "px";
 
     polaroidOverlay.appendChild(el);
-
-    console.log(`Polaroid ${labelIndex + 1} gespawnd op`, x, y);
 }
 
 function spawnPolaroidsDuringVideo() {
-
-    console.log("spawnPolaroidsDuringVideo gestart, snapshots:", window.snapshots.length);
 
     if (window.snapshots.length === 0) {
         console.warn("Geen snapshots beschikbaar!");
@@ -642,7 +707,6 @@ function spawnPolaroidsDuringVideo() {
 
     let polaroidIndex = 0;
     const duration = mainVideo.duration;
-
     const spawnFractions = [0.10, 0.22, 0.35, 0.50, 0.63, 0.76];
 
     function onTimeUpdate() {

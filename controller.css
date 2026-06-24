@@ -81,49 +81,6 @@ button:hover{
     opacity:0.3;
 }
 
-#waitText,
-#doneText{
-    font-size:1rem;
-    letter-spacing:0.3rem;
-    text-transform:uppercase;
-    text-align:center;
-    opacity:0.6;
-}
-
-#controllerInstruction{
-    font-size:0.85rem;
-    letter-spacing:0.25rem;
-    text-transform:uppercase;
-    opacity:0.5;
-}
-
-#controllerArea{
-    width:min(80vw, 500px);
-    height:min(55vh, 380px);
-    border:1px solid rgba(255,255,255,0.3);
-    position:relative;
-    cursor:crosshair;
-    touch-action:none;
-    background:rgba(255,255,255,0.02);
-}
-
-#controllerDot{
-    width:16px;
-    height:16px;
-    background:white;
-    border-radius:50%;
-    position:absolute;
-    transform:translate(-50%, -50%);
-    top:50%;
-    left:50%;
-    pointer-events:none;
-    box-shadow:0 0 8px rgba(255,255,255,0.6);
-}
-
-.hidden{
-    display:none !important;
-}
-
 #messageHint{
     display:block;
     opacity:0.45;
@@ -162,4 +119,65 @@ button:hover{
     border-color:white;
     color:white;
     background:rgba(255,255,255,0.06);
+}
+
+#waitText,
+#doneText{
+    font-size:1rem;
+    letter-spacing:0.3rem;
+    text-transform:uppercase;
+    text-align:center;
+    opacity:0.6;
+}
+
+#controllerInstruction{
+    font-size:0.85rem;
+    letter-spacing:0.25rem;
+    text-transform:uppercase;
+    opacity:0.5;
+}
+
+/* Video + controller overlay */
+#controllerWrapper{
+    position:relative;
+    width:min(80vw, 500px);
+    height:min(55vh, 380px);
+}
+
+#remoteVideo{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    border:1px solid rgba(255,255,255,0.3);
+    background:black;
+    filter:contrast(1.1) brightness(0.9);
+}
+
+#controllerArea{
+    position:absolute;
+    inset:0;
+    cursor:crosshair;
+    touch-action:none;
+    background:transparent;
+    z-index:10;
+}
+
+#controllerDot{
+    width:16px;
+    height:16px;
+    background:white;
+    border-radius:50%;
+    position:absolute;
+    transform:translate(-50%, -50%);
+    top:50%;
+    left:50%;
+    pointer-events:none;
+    box-shadow:0 0 8px rgba(255,255,255,0.6);
+    z-index:11;
+}
+
+.hidden{
+    display:none !important;
 }
