@@ -46,11 +46,15 @@ function setGameStatus(status) {
 }
 
 function resetFirebase() {
-    set(ref(db, "game"), {
-        status: "waiting",
-        boxPosition: { x: window.innerWidth / 2, y: window.innerHeight / 2 },
-        message: "",
-        screen: { w: window.innerWidth, h: window.innerHeight }
+    // message NIET resetten — die komt van de controller
+    set(ref(db, "game/status"), "waiting");
+    set(ref(db, "game/boxPosition"), {
+        x: window.innerWidth / 2,
+        y: window.innerHeight / 2
+    });
+    set(ref(db, "game/screen"), {
+        w: window.innerWidth,
+        h: window.innerHeight
     });
 }
 
@@ -137,8 +141,8 @@ const endText = document.getElementById("endText");
    START
 ========================= */
 fingerprint.addEventListener("click", () => {
-    resetFirebase();
-    listenToMessage();
+    listenToMessage(); // eerst luisteren
+    resetFirebase();   // dan pas resetten (zonder message)
     startScreen.style.display = "none";
     experience.style.display = "flex";
     playVideo(currentVideo);
@@ -269,7 +273,6 @@ function startPreGameCountdown() {
     dodgeBox.style.display = "none";
     preGameOverlay.style.display = "flex";
 
-    // Controller ziet nu al dat het bijna begint
     setGameStatus("pregame");
 
     let timeLeft = 7;
@@ -303,7 +306,6 @@ function startActualGame() {
     dodgeBox.style.top = (window.innerHeight / 2 - 80) + "px";
     dodgeBox.style.display = "flex";
 
-    // Stuur schermgrootte mee zodat controller correct kan schalen
     set(ref(db, "game/screen"), {
         w: window.innerWidth,
         h: window.innerHeight
@@ -311,8 +313,27 @@ function startActualGame() {
 
     listenToBoxPosition();
     setGameStatus("started");
+    startRandomBlackouts();
 
     startRounds();
+}
+
+/* =========================
+   RANDOM BLACKOUTS
+========================= */
+function startRandomBlackouts() {
+    function scheduleNext() {
+        const delay = 8000 + Math.random() * 12000; // elke 8-20 seconden
+        setTimeout(() => {
+            if (!gameActive) return;
+            gameScreen.style.filter = "brightness(0)";
+            setTimeout(() => {
+                gameScreen.style.filter = "";
+                scheduleNext();
+            }, 600);
+        }, delay);
+    }
+    scheduleNext();
 }
 
 /* =========================
@@ -433,6 +454,7 @@ function endGame() {
     gameActive = false;
     heartbeatSound.pause();
     dodgeBox.style.display = "none";
+    gameScreen.style.filter = ""; // reset blackout filter
 
     setGameStatus("ended");
     startShutdownTransition();
@@ -509,7 +531,7 @@ function playOthersVideo(index) {
 
     mainVideo.onended = () => {
         if (index === othersVideos.length - 1) {
-            continueBtn.innerText = "listen to the whispers";
+            continueBtn.innerText = "rooting for me?";
             continueBtn.style.display = "block";
 
             continueBtn.onclick = () => {
@@ -672,7 +694,7 @@ function showEndScreen() {
         endPolaroids.appendChild(el);
     });
 
-    const message = window.__controllerMessage || "you have been seen by the others.";
+    const message = window.__controllerMessage || "you are seen by the others.";
 
     setTimeout(() => {
         endScreen.style.backgroundColor = "white";

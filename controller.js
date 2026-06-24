@@ -55,7 +55,6 @@ introBtn.addEventListener("click", () => {
     messageScreen.classList.remove("hidden");
     messageInput.focus();
 
-    // Suggesties klikken vult het inputveld
     document.querySelectorAll(".suggestion").forEach(btn => {
         btn.addEventListener("click", () => {
             messageInput.value = btn.innerText;
@@ -82,7 +81,6 @@ messageBtn.addEventListener("click", () => {
     messageScreen.classList.add("hidden");
     waitScreen.classList.remove("hidden");
 
-    // Luister op game status van apparaat 1
     onValue(ref(db, "game/status"), (snapshot) => {
         const status = snapshot.val();
         console.log("game status:", status);
@@ -99,7 +97,6 @@ messageBtn.addEventListener("click", () => {
             controllerInstruction.innerText = "move the frame. find the perfect shot.";
             controllerArea.style.opacity = "1";
             controllerArea.style.pointerEvents = "auto";
-            // Zorg dat controllerScreen zichtbaar is ook als pregame gemist werd
             waitScreen.classList.add("hidden");
             controllerScreen.classList.remove("hidden");
         }
@@ -110,6 +107,35 @@ messageBtn.addEventListener("click", () => {
         }
     });
 });
+
+/* =========================
+   SMOOTH BEWEGING — TARGET & CURRENT
+========================= */
+let targetX = 960;
+let targetY = 540;
+let currentX = 960;
+let currentY = 540;
+let lastSend = 0;
+
+// Smooth loop — beweegt langzamer dan de muis
+function smoothLoop() {
+    const speed = 0.08; // lager = meer delay
+    currentX += (targetX - currentX) * speed;
+    currentY += (targetY - currentY) * speed;
+
+    const now = Date.now();
+    if (now - lastSend > 50) {
+        lastSend = now;
+        set(ref(db, "game/boxPosition"), {
+            x: Math.round(currentX),
+            y: Math.round(currentY)
+        });
+    }
+
+    requestAnimationFrame(smoothLoop);
+}
+
+smoothLoop();
 
 /* =========================
    CONTROLLER — MUIS
@@ -128,29 +154,20 @@ controllerArea.addEventListener("touchmove", (e) => {
 }, { passive: false });
 
 /* =========================
-   POSITIE STUREN
+   POSITIE BEREKENEN → TARGET ZETTEN
 ========================= */
-let lastSend = 0;
-
 function handleMove(clientX, clientY) {
-
-    const now = Date.now();
-    if (now - lastSend < 50) return; // max 20x per seconde
-    lastSend = now;
-
     const rect = controllerArea.getBoundingClientRect();
 
     const fracX = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     const fracY = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
 
-    // Dot bewegen in het controller vlak
+    // Dot beweegt direct mee
     controllerDot.style.left = (fracX * 100) + "%";
     controllerDot.style.top = (fracY * 100) + "%";
 
-    // Omrekenen naar schermcoördinaten van apparaat 1
+    // Target zetten — box beweegt langzamer via smoothLoop
     const padding = 20;
-    const x = padding + fracX * (screenW - 400 - padding * 2);
-    const y = padding + fracY * (screenH - 300 - padding * 2);
-
-    set(ref(db, "game/boxPosition"), { x, y });
+    targetX = padding + fracX * (screenW - 400 - padding * 2);
+    targetY = padding + fracY * (screenH - 300 - padding * 2);
 }
