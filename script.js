@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-import { getDatabase, ref, onValue, set, push, remove } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+import { getDatabase, ref, onValue, set, push } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
 
 /* =========================
    FIREBASE
@@ -18,6 +18,19 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 /* =========================
+   SENSITIVITY PER RONDE
+   ronde 0,1 → snel (1.8)
+   ronde 2,3 → langzaam (0.4)
+   ronde 4,5 → normaal (1.0)
+========================= */
+const sensitivityPerRound = [1.8, 1.8, 0.4, 0.4, 1.0, 1.0];
+
+function updateSensitivity(round) {
+    const sens = sensitivityPerRound[round] ?? 1.0;
+    set(ref(db, "game/sensitivity"), sens);
+}
+
+/* =========================
    WEBRTC
 ========================= */
 let peerConnection = null;
@@ -31,34 +44,28 @@ const rtcConfig = {
 };
 
 async function startWebRTC(stream) {
-    // Schoon oude signaling data op
     await set(ref(db, "webrtc"), null);
 
     peerConnection = new RTCPeerConnection(rtcConfig);
 
-    // Voeg webcamstream toe aan de verbinding
     stream.getTracks().forEach(track => {
         peerConnection.addTrack(track, stream);
     });
 
-    // Stuur ICE candidates naar Firebase
     peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
             push(ref(db, "webrtc/offerCandidates"), event.candidate.toJSON());
         }
     };
 
-    // Maak offer aan
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
 
-    // Schrijf offer naar Firebase
     await set(ref(db, "webrtc/offer"), {
         type: offer.type,
         sdp: offer.sdp
     });
 
-    // Luister op answer van controller
     onValue(ref(db, "webrtc/answer"), async (snapshot) => {
         const answer = snapshot.val();
         if (answer && peerConnection.signalingState !== "stable") {
@@ -66,7 +73,6 @@ async function startWebRTC(stream) {
         }
     });
 
-    // Luister op ICE candidates van controller
     onValue(ref(db, "webrtc/answerCandidates"), (snapshot) => {
         snapshot.forEach((child) => {
             const candidate = child.val();
@@ -104,6 +110,13 @@ function listenToMessage() {
     });
 }
 
+function listenToName() {
+    onValue(ref(db, "game/photographerName"), (snapshot) => {
+        const name = snapshot.val();
+        if (name) window.__photographerName = name;
+    });
+}
+
 function setGameStatus(status) {
     set(ref(db, "game/status"), status);
 }
@@ -118,6 +131,7 @@ function resetFirebase() {
         w: window.innerWidth,
         h: window.innerHeight
     });
+    set(ref(db, "game/sensitivity"), 1.0);
 }
 
 /* =========================
@@ -156,6 +170,7 @@ let heartbeatStarted = false;
 /* SNAPSHOTS */
 window.snapshots = [];
 window.__controllerMessage = "";
+window.__photographerName = "";
 
 /* =========================
    DOM
@@ -207,6 +222,7 @@ fingerprint.addEventListener("click", () => {
         document.documentElement.requestFullscreen().catch(() => {});
     }
     listenToMessage();
+    listenToName();
     resetFirebase();
     startScreen.style.display = "none";
     experience.style.display = "flex";
@@ -326,7 +342,6 @@ async function startWebcamGame() {
     webcamVideo.srcObject = stream;
     localStream = stream;
 
-    // Start WebRTC zodat controller de webcam kan zien
     await startWebRTC(stream);
 
     gameActive = false;
@@ -370,6 +385,7 @@ function startActualGame() {
     round = 0;
 
     updateBoxSize();
+    updateSensitivity(round);
 
     dodgeBox.style.left = (window.innerWidth / 2 - 100) + "px";
     dodgeBox.style.top = (window.innerHeight / 2 - 80) + "px";
@@ -382,27 +398,8 @@ function startActualGame() {
 
     listenToBoxPosition();
     setGameStatus("started");
-    startRandomBlackouts();
 
     startRounds();
-}
-
-/* =========================
-   RANDOM BLACKOUTS
-========================= */
-function startRandomBlackouts() {
-    function scheduleNext() {
-        const delay = 8000 + Math.random() * 12000;
-        setTimeout(() => {
-            if (!gameActive) return;
-            gameScreen.style.filter = "brightness(0)";
-            setTimeout(() => {
-                gameScreen.style.filter = "";
-                scheduleNext();
-            }, 600);
-        }, delay);
-    }
-    scheduleNext();
 }
 
 /* =========================
@@ -418,6 +415,7 @@ function startRounds() {
         }
 
         updateBoxSize();
+        updateSensitivity(round);
 
         let timeLeft = 7;
         timerEl.innerText = timeLeft;
@@ -494,8 +492,6 @@ function snapshotSequence() {
         const dataURL = cropCanvas.toDataURL("image/jpeg", 0.85);
         window.snapshots.push(dataURL);
 
-        console.log(`Snapshot ${window.snapshots.length} opgeslagen`, cropW, cropH);
-
         flash.style.opacity = "0";
 
         setTimeout(() => {
@@ -523,7 +519,6 @@ function endGame() {
     gameActive = false;
     heartbeatSound.pause();
     dodgeBox.style.display = "none";
-    gameScreen.style.filter = "";
 
     setGameStatus("ended");
     startShutdownTransition();
@@ -681,12 +676,18 @@ function spawnPolaroid(dataURL, labelIndex) {
     const img = document.createElement("img");
     img.src = dataURL;
 
-    const label = document.createElement("div");
-    label.classList.add("polaroid-label");
-    label.innerText = `subject_0${labelIndex + 1}`;
+    const caption = document.createElement("div");
+    caption.classList.add("polaroid-label");
+    caption.innerText = window.__controllerMessage || "";
+
+    const credit = document.createElement("div");
+    credit.classList.add("polaroid-credit");
+    const name = window.__photographerName || "the others";
+    credit.innerText = `from one of the others, ${name}.`;
 
     el.appendChild(img);
-    el.appendChild(label);
+    el.appendChild(caption);
+    el.appendChild(credit);
 
     const rot = (Math.random() * 20 - 10).toFixed(1);
     el.style.setProperty("--rot", rot + "deg");
@@ -737,6 +738,8 @@ function showEndScreen() {
 
     endPolaroids.innerHTML = "";
 
+    const name = window.__photographerName || "the others";
+
     window.snapshots.forEach((dataURL, i) => {
         const el = document.createElement("div");
         el.classList.add("polaroid");
@@ -744,12 +747,17 @@ function showEndScreen() {
         const img = document.createElement("img");
         img.src = dataURL;
 
-        const label = document.createElement("div");
-        label.classList.add("polaroid-label");
-        label.innerText = `subject_0${i + 1}`;
+        const caption = document.createElement("div");
+        caption.classList.add("polaroid-label");
+        caption.innerText = window.__controllerMessage || "";
+
+        const credit = document.createElement("div");
+        credit.classList.add("polaroid-credit");
+        credit.innerText = `from one of the others, ${name}.`;
 
         el.appendChild(img);
-        el.appendChild(label);
+        el.appendChild(caption);
+        el.appendChild(credit);
 
         const rot = (Math.random() * 10 - 5).toFixed(1);
         el.style.setProperty("--rot", rot + "deg");

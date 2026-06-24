@@ -32,7 +32,6 @@ const rtcConfig = {
 async function startWebRTC() {
     peerConnection = new RTCPeerConnection(rtcConfig);
 
-    // Ontvang videostream van apparaat 1
     peerConnection.ontrack = (event) => {
         const remoteVideo = document.getElementById("remoteVideo");
         if (remoteVideo && event.streams[0]) {
@@ -40,20 +39,17 @@ async function startWebRTC() {
         }
     };
 
-    // Stuur ICE candidates naar Firebase
     peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
             push(ref(db, "webrtc/answerCandidates"), event.candidate.toJSON());
         }
     };
 
-    // Luister op offer van apparaat 1
     onValue(ref(db, "webrtc/offer"), async (snapshot) => {
         const offer = snapshot.val();
         if (!offer || peerConnection.signalingState !== "stable") return;
 
         await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-
         const answer = await peerConnection.createAnswer();
         await peerConnection.setLocalDescription(answer);
 
@@ -63,7 +59,6 @@ async function startWebRTC() {
         });
     });
 
-    // Luister op ICE candidates van apparaat 1
     onValue(ref(db, "webrtc/offerCandidates"), (snapshot) => {
         snapshot.forEach((child) => {
             const candidate = child.val();
@@ -79,6 +74,7 @@ async function startWebRTC() {
 ========================= */
 const introScreen = document.getElementById("introScreen");
 const messageScreen = document.getElementById("messageScreen");
+const nameScreen = document.getElementById("nameScreen");
 const waitScreen = document.getElementById("waitScreen");
 const controllerScreen = document.getElementById("controllerScreen");
 const doneScreen = document.getElementById("doneScreen");
@@ -86,6 +82,8 @@ const doneScreen = document.getElementById("doneScreen");
 const introBtn = document.getElementById("introBtn");
 const messageInput = document.getElementById("messageInput");
 const messageBtn = document.getElementById("messageBtn");
+const nameInput = document.getElementById("nameInput");
+const nameBtn = document.getElementById("nameBtn");
 const controllerArea = document.getElementById("controllerArea");
 const controllerDot = document.getElementById("controllerDot");
 const controllerInstruction = document.getElementById("controllerInstruction");
@@ -123,7 +121,7 @@ introBtn.addEventListener("click", () => {
 });
 
 /* =========================
-   STAP 2 → 3
+   STAP 2 → 3 (caption → naam)
 ========================= */
 messageBtn.addEventListener("click", () => {
     const msg = messageInput.value.trim();
@@ -136,9 +134,26 @@ messageBtn.addEventListener("click", () => {
     set(ref(db, "game/message"), msg);
 
     messageScreen.classList.add("hidden");
+    nameScreen.classList.remove("hidden");
+    nameInput.focus();
+});
+
+/* =========================
+   STAP 3 → 4 (naam → wachten)
+========================= */
+nameBtn.addEventListener("click", () => {
+    const name = nameInput.value.trim();
+    if (!name) {
+        nameInput.style.borderBottom = "1px solid rgba(255,255,255,0.6)";
+        nameInput.placeholder = "please write your name first.";
+        return;
+    }
+
+    set(ref(db, "game/photographerName"), name);
+
+    nameScreen.classList.add("hidden");
     waitScreen.classList.remove("hidden");
 
-    // Start WebRTC alvast zodat verbinding klaar is als game begint
     startWebRTC();
 
     onValue(ref(db, "game/status"), (snapshot) => {
@@ -177,8 +192,16 @@ let currentX = 960;
 let currentY = 540;
 let lastSend = 0;
 
+// Sensitivity per ronde — wordt gezet door script.js via Firebase
+let currentSensitivity = 1.0;
+
+onValue(ref(db, "game/sensitivity"), (snapshot) => {
+    const val = snapshot.val();
+    if (val !== null) currentSensitivity = val;
+});
+
 function smoothLoop() {
-    const speed = 0.08;
+    const speed = 0.08 * currentSensitivity;
     currentX += (targetX - currentX) * speed;
     currentY += (targetY - currentY) * speed;
 
@@ -225,6 +248,6 @@ function handleMove(clientX, clientY) {
     controllerDot.style.top = (fracY * 100) + "%";
 
     const padding = 20;
-    targetX = padding + fracX * (screenW - 400 - padding * 2);
-    targetY = padding + fracY * (screenH - 300 - padding * 2);
+    targetX = padding + fracX * (screenW - 400 - padding * 2) * currentSensitivity;
+    targetY = padding + fracY * (screenH - 300 - padding * 2) * currentSensitivity;
 }

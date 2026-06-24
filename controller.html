@@ -15,7 +15,7 @@
     <button id="introBtn">i'm ready</button>
 </div>
 
-<!-- STAP 2: ZIN INTYPEN -->
+<!-- STAP 2: CAPTION -->
 <div id="messageScreen" class="hidden">
     <p id="messagePrompt">you're about to take a photo of someone.<br>choose or write your own caption for their pictures —<br>something genuine. something fun. something sweet. something about them.<br><span id="messageHint">they'll read this. make it count.</span></p>
     
@@ -36,28 +36,33 @@
         <button class="suggestion">crazy smart.</button>
     </div>
 
-    <button id="messageBtn">send it</button>
+    <button id="messageBtn">next</button>
 </div>
 
-<!-- STAP 3: WACHTEN TOT GAME START -->
+<!-- STAP 3: NAAM -->
+<div id="nameScreen" class="hidden">
+    <p id="namePrompt">and who's behind the lens?</p>
+    <input type="text" id="nameInput" maxlength="40" placeholder="write your name...">
+    <button id="nameBtn">send it</button>
+</div>
+
+<!-- STAP 4: WACHTEN TOT GAME START -->
 <div id="waitScreen" class="hidden">
     <p id="waitText">[waiting for the experience to begin]</p>
 </div>
 
-<!-- STAP 4: CONTROLLER -->
+<!-- STAP 5: CONTROLLER -->
 <div id="controllerScreen" class="hidden">
     <p id="controllerInstruction">move the frame. find the perfect shot.</p>
     <div id="controllerWrapper">
-        <!-- Live webcamfeed van apparaat 1 -->
         <video id="remoteVideo" autoplay playsinline muted></video>
-        <!-- Controller vlak bovenop de video -->
         <div id="controllerArea">
             <div id="controllerDot"></div>
         </div>
     </div>
 </div>
 
-<!-- STAP 5: KLAAR -->
+<!-- STAP 6: KLAAR -->
 <div id="doneScreen" class="hidden">
     <p id="doneText">shot taken.<br>they'll see it soon.</p>
 </div>
