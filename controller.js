@@ -254,28 +254,26 @@ controllerArea.addEventListener("touchmove", (e) => {
 function handleMove(clientX, clientY) {
     const rect = controllerArea.getBoundingClientRect();
 
-    // Fractie binnen het controller vlak (0-1) — muissnelheid ongewijzigd
+    // Fractie 0-1 binnen het controller vlak
     const fracX = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     const fracY = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
 
-    // Dot beweegt direct en identiek aan de muis
+    // Dot beweegt direct en identiek
     controllerDot.style.left = (fracX * 100) + "%";
     controllerDot.style.top = (fracY * 100) + "%";
 
-    // Bereik op apparaat 1 wordt geschaald door sensitivity
-    const baseW = screenW - 400;
-    const baseH = screenH - 300;
+    // Sensitivity: bepaalt hoe het bereik wordt vergroot/verkleind
+    // Bij sens 1.0 = exacte mapping. Bij 2.0 = kleine beweging → grote sprong
+    // Maar de randen blijven altijd bereikbaar via clamp
     const padding = 20;
+    const maxW = screenW - 400 - padding * 2;
+    const maxH = screenH - 300 - padding * 2;
 
-    // Middelpunt van het scherm
-    const centerX = screenW / 2;
-    const centerY = screenH / 2;
+    // Pas sensitivity toe als versnelling vanuit midden,
+    // maar normalize zodat uiterste posities altijd 0 en maxW/maxH zijn
+    const sensX = Math.max(0, Math.min(1, 0.5 + (fracX - 0.5) * currentSensitivity));
+    const sensY = Math.max(0, Math.min(1, 0.5 + (fracY - 0.5) * currentSensitivity));
 
-    // Positie relatief aan midden, geschaald door sensitivity
-    const relX = (fracX - 0.5) * baseW * currentSensitivity;
-    const relY = (fracY - 0.5) * baseH * currentSensitivity;
-
-    // Clamp binnen schermgrenzen
-    targetX = Math.max(padding, Math.min(centerX + relX, screenW - 400 - padding));
-    targetY = Math.max(padding, Math.min(centerY + relY, screenH - 300 - padding));
+    targetX = padding + sensX * maxW;
+    targetY = padding + sensY * maxH;
 }
