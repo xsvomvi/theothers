@@ -315,7 +315,7 @@ body{
 }
 
 #tutorialImage{
-    width:min(70vw, 900px);
+    width:min(90vw, 1200px);
     height:auto;
     object-fit:contain;
     margin-bottom:2rem;

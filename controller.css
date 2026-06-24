@@ -32,7 +32,7 @@ body{
 }
 
 #controllerIntroImg{
-    width:min(70vw, 600px);
+    width:min(90vw, 1200px);
     height:auto;
     object-fit:contain;
 }
