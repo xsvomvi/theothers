@@ -72,18 +72,18 @@ async function startWebRTC() {
 /* =========================
    DOM
 ========================= */
-const introScreen = document.getElementById("introScreen");
 const messageScreen = document.getElementById("messageScreen");
 const nameScreen = document.getElementById("nameScreen");
+const introScreen = document.getElementById("introScreen");
 const waitScreen = document.getElementById("waitScreen");
 const controllerScreen = document.getElementById("controllerScreen");
 const doneScreen = document.getElementById("doneScreen");
 
-const introBtn = document.getElementById("introBtn");
 const messageInput = document.getElementById("messageInput");
 const messageBtn = document.getElementById("messageBtn");
 const nameInput = document.getElementById("nameInput");
 const nameBtn = document.getElementById("nameBtn");
+const introBtn = document.getElementById("introBtn");
 const controllerArea = document.getElementById("controllerArea");
 const controllerDot = document.getElementById("controllerDot");
 const controllerInstruction = document.getElementById("controllerInstruction");
@@ -103,25 +103,32 @@ onValue(ref(db, "game/screen"), (snapshot) => {
 });
 
 /* =========================
-   STAP 1 → 2
+   SENSITIVITY SYNC
+   De sensitivity bepaalt hoe groot het bereik is op het scherm van apparaat 1.
+   De muis op de controller beweegt altijd even snel — alleen het effect op
+   apparaat 1 verandert.
 ========================= */
-introBtn.addEventListener("click", () => {
-    introScreen.classList.add("hidden");
-    messageScreen.classList.remove("hidden");
-    messageInput.focus();
+let currentSensitivity = 1.0;
 
-    document.querySelectorAll(".suggestion").forEach(btn => {
-        btn.addEventListener("click", () => {
-            messageInput.value = btn.innerText;
-            document.querySelectorAll(".suggestion").forEach(b => b.classList.remove("selected"));
-            btn.classList.add("selected");
-            messageInput.focus();
-        });
+onValue(ref(db, "game/sensitivity"), (snapshot) => {
+    const val = snapshot.val();
+    if (val !== null) currentSensitivity = val;
+});
+
+/* =========================
+   SUGGESTIES
+========================= */
+document.querySelectorAll(".suggestion").forEach(btn => {
+    btn.addEventListener("click", () => {
+        messageInput.value = btn.innerText;
+        document.querySelectorAll(".suggestion").forEach(b => b.classList.remove("selected"));
+        btn.classList.add("selected");
+        messageInput.focus();
     });
 });
 
 /* =========================
-   STAP 2 → 3 (caption → naam)
+   STAP 1 → 2 (caption → naam)
 ========================= */
 messageBtn.addEventListener("click", () => {
     const msg = messageInput.value.trim();
@@ -139,7 +146,7 @@ messageBtn.addEventListener("click", () => {
 });
 
 /* =========================
-   STAP 3 → 4 (naam → wachten)
+   STAP 2 → 3 (naam → intro)
 ========================= */
 nameBtn.addEventListener("click", () => {
     const name = nameInput.value.trim();
@@ -152,6 +159,14 @@ nameBtn.addEventListener("click", () => {
     set(ref(db, "game/photographerName"), name);
 
     nameScreen.classList.add("hidden");
+    introScreen.classList.remove("hidden");
+});
+
+/* =========================
+   STAP 3 → 4 (intro → wachten)
+========================= */
+introBtn.addEventListener("click", () => {
+    introScreen.classList.add("hidden");
     waitScreen.classList.remove("hidden");
 
     startWebRTC();
@@ -185,6 +200,8 @@ nameBtn.addEventListener("click", () => {
 
 /* =========================
    SMOOTH BEWEGING
+   De dot beweegt direct — de box op apparaat 1 volgt met delay.
+   Sensitivity past het bereik aan op apparaat 1, niet de muissnelheid hier.
 ========================= */
 let targetX = 960;
 let targetY = 540;
@@ -192,18 +209,11 @@ let currentX = 960;
 let currentY = 540;
 let lastSend = 0;
 
-// Sensitivity per ronde — wordt gezet door script.js via Firebase
-let currentSensitivity = 1.0;
-
-onValue(ref(db, "game/sensitivity"), (snapshot) => {
-    const val = snapshot.val();
-    if (val !== null) currentSensitivity = val;
-});
-
 function smoothLoop() {
-    const speed = 0.08 * currentSensitivity;
-    currentX += (targetX - currentX) * speed;
-    currentY += (targetY - currentY) * speed;
+    // Vaste smoothing speed — delay blijft altijd hetzelfde
+    const smoothSpeed = 0.08;
+    currentX += (targetX - currentX) * smoothSpeed;
+    currentY += (targetY - currentY) * smoothSpeed;
 
     const now = Date.now();
     if (now - lastSend > 50) {
@@ -237,17 +247,35 @@ controllerArea.addEventListener("touchmove", (e) => {
 
 /* =========================
    POSITIE BEREKENEN
+   Sensitivity schaalt het bereik op apparaat 1:
+   hoog = kleine muisbeweging → grote beweging op apparaat 1 (moeilijk voor experiencer)
+   laag = grote muisbeweging → kleine beweging op apparaat 1 (makkelijk voor experiencer)
 ========================= */
 function handleMove(clientX, clientY) {
     const rect = controllerArea.getBoundingClientRect();
 
+    // Fractie binnen het controller vlak (0-1) — muissnelheid ongewijzigd
     const fracX = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     const fracY = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
 
+    // Dot beweegt direct en identiek aan de muis
     controllerDot.style.left = (fracX * 100) + "%";
     controllerDot.style.top = (fracY * 100) + "%";
 
+    // Bereik op apparaat 1 wordt geschaald door sensitivity
+    const baseW = screenW - 400;
+    const baseH = screenH - 300;
     const padding = 20;
-    targetX = padding + fracX * (screenW - 400 - padding * 2) * currentSensitivity;
-    targetY = padding + fracY * (screenH - 300 - padding * 2) * currentSensitivity;
+
+    // Middelpunt van het scherm
+    const centerX = screenW / 2;
+    const centerY = screenH / 2;
+
+    // Positie relatief aan midden, geschaald door sensitivity
+    const relX = (fracX - 0.5) * baseW * currentSensitivity;
+    const relY = (fracY - 0.5) * baseH * currentSensitivity;
+
+    // Clamp binnen schermgrenzen
+    targetX = Math.max(padding, Math.min(centerX + relX, screenW - 400 - padding));
+    targetY = Math.max(padding, Math.min(centerY + relY, screenH - 300 - padding));
 }

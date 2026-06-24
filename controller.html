@@ -9,15 +9,9 @@
 
 <body>
 
-<!-- STAP 1: INTRO -->
-<div id="introScreen">
-    <img src="images/minigame.png" id="controllerIntroImg">
-    <button id="introBtn">i'm ready</button>
-</div>
-
-<!-- STAP 2: CAPTION -->
-<div id="messageScreen" class="hidden">
-    <p id="messagePrompt">you're about to take a photo of the other person. choose or write your own caption for their pictures —<br>something genuine. something fun. something sweet. something about them.<br><span id="messageHint">they'll read this. make it count.</span></p>
+<!-- STAP 1: CAPTION -->
+<div id="messageScreen">
+    <p id="messagePrompt">you're about to take a photo of someone.<br>choose or write your own caption for their pictures —<br>something genuine. something fun. something sweet. something about them.<br><span id="messageHint">they'll read this. make it count.</span></p>
     
     <input type="text" id="messageInput" maxlength="80" placeholder="write your own caption...">
 
@@ -39,11 +33,17 @@
     <button id="messageBtn">next</button>
 </div>
 
-<!-- STAP 3: NAAM -->
+<!-- STAP 2: NAAM -->
 <div id="nameScreen" class="hidden">
     <p id="namePrompt">and who's behind the lens?</p>
     <input type="text" id="nameInput" maxlength="40" placeholder="write your name...">
-    <button id="nameBtn">send it</button>
+    <button id="nameBtn">next</button>
+</div>
+
+<!-- STAP 3: INTRO/INSTRUCTIES -->
+<div id="introScreen" class="hidden">
+    <img src="images/minigame.png" id="controllerIntroImg">
+    <button id="introBtn">i'm ready</button>
 </div>
 
 <!-- STAP 4: WACHTEN TOT GAME START -->

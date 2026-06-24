@@ -19,15 +19,28 @@ const db = getDatabase(app);
 
 /* =========================
    SENSITIVITY PER RONDE
-   ronde 0,1 → snel (1.8)
-   ronde 2,3 → langzaam (0.4)
-   ronde 4,5 → normaal (1.0)
+   6 rondes, allemaal anders, gerandomized volgorde per sessie.
+   Waarden: 0.15 (extreem traag), 0.4 (traag), 0.85 (normaal),
+            1.3 (normaal snel), 2.2 (snel), 3.8 (extreem snel)
 ========================= */
-const sensitivityPerRound = [1.8, 1.8, 0.4, 0.4, 1.0, 1.0];
+const sensitivityValues = [0.15, 0.4, 0.85, 1.3, 2.2, 3.8];
+
+function shuffleArray(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+// Gerandomized volgorde per sessie
+const sensitivityOrder = shuffleArray(sensitivityValues);
 
 function updateSensitivity(round) {
-    const sens = sensitivityPerRound[round] ?? 1.0;
+    const sens = sensitivityOrder[round] ?? 1.0;
     set(ref(db, "game/sensitivity"), sens);
+    console.log(`Ronde ${round + 1} sensitivity: ${sens}`);
 }
 
 /* =========================
@@ -640,6 +653,7 @@ function playConnectionVideo() {
 
 /* =========================
    POLAROID SYSTEEM
+   Geen labels op de polaroids zelf
 ========================= */
 function getRandomPolaroidPosition() {
     const pw = 200;
@@ -676,18 +690,7 @@ function spawnPolaroid(dataURL, labelIndex) {
     const img = document.createElement("img");
     img.src = dataURL;
 
-    const caption = document.createElement("div");
-    caption.classList.add("polaroid-label");
-    caption.innerText = window.__controllerMessage || "";
-
-    const credit = document.createElement("div");
-    credit.classList.add("polaroid-credit");
-    const name = window.__photographerName || "the others";
-    credit.innerText = `from one of the others, ${name}.`;
-
     el.appendChild(img);
-    el.appendChild(caption);
-    el.appendChild(credit);
 
     const rot = (Math.random() * 20 - 10).toFixed(1);
     el.style.setProperty("--rot", rot + "deg");
@@ -730,6 +733,7 @@ function spawnPolaroidsDuringVideo() {
 
 /* =========================
    END SCREEN
+   Caption + naam alleen onderaan de pagina, niet op de polaroids
 ========================= */
 function showEndScreen() {
 
@@ -738,8 +742,6 @@ function showEndScreen() {
 
     endPolaroids.innerHTML = "";
 
-    const name = window.__photographerName || "the others";
-
     window.snapshots.forEach((dataURL, i) => {
         const el = document.createElement("div");
         el.classList.add("polaroid");
@@ -747,17 +749,7 @@ function showEndScreen() {
         const img = document.createElement("img");
         img.src = dataURL;
 
-        const caption = document.createElement("div");
-        caption.classList.add("polaroid-label");
-        caption.innerText = window.__controllerMessage || "";
-
-        const credit = document.createElement("div");
-        credit.classList.add("polaroid-credit");
-        credit.innerText = `from one of the others, ${name}.`;
-
         el.appendChild(img);
-        el.appendChild(caption);
-        el.appendChild(credit);
 
         const rot = (Math.random() * 10 - 5).toFixed(1);
         el.style.setProperty("--rot", rot + "deg");
@@ -766,15 +758,23 @@ function showEndScreen() {
         endPolaroids.appendChild(el);
     });
 
-    const message = window.__controllerMessage || "you are seen by the others.";
+    const caption = window.__controllerMessage || "you are seen by the others.";
+    const name = window.__photographerName || "the others";
 
     setTimeout(() => {
         endScreen.style.backgroundColor = "white";
     }, 100);
 
     setTimeout(() => {
-        endText.innerText = message;
+        // Caption
+        endText.innerText = caption;
         endText.style.color = "black";
         endText.style.opacity = "1";
+
+        // Naam eronder
+        const creditEl = document.getElementById("endCredit");
+        creditEl.innerText = `from one of the others, ${name}.`;
+        creditEl.style.color = "black";
+        creditEl.style.opacity = "1";
     }, 2500);
 }

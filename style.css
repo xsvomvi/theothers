@@ -101,7 +101,7 @@ body{
     font-family:'Courier New', monospace;
     cursor:pointer;
     transition:0.3s;
-    z-index:10;
+    z-index:20001;
 }
 
 #continueBtn:hover{
@@ -168,6 +168,16 @@ body{
     margin-top:6px;
     letter-spacing:0.15rem;
     text-transform:uppercase;
+}
+
+.polaroid-credit{
+    text-align:center;
+    font-family:'Courier New', monospace;
+    font-size:0.45rem;
+    color:#888;
+    margin-top:3px;
+    letter-spacing:0.1rem;
+    font-style:italic;
 }
 
 @keyframes polaroidDrop{
@@ -315,7 +325,7 @@ body{
 }
 
 #tutorialImage{
-    width:min(90vw, 1200px);
+    width:min(70vw, 900px);
     height:auto;
     object-fit:contain;
     margin-bottom:2rem;
@@ -470,4 +480,17 @@ body{
     text-align:center;
     opacity:0;
     transition:opacity 1.5s ease;
+}
+
+#endCredit{
+    color:black;
+    font-family:'Courier New', monospace;
+    font-size:0.75rem;
+    letter-spacing:0.2rem;
+    text-transform:uppercase;
+    text-align:center;
+    opacity:0;
+    transition:opacity 1.5s ease;
+    margin-top:0.5rem;
+    font-style:italic;
 }
