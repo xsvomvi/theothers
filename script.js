@@ -108,8 +108,13 @@ function listenToBoxPosition() {
         const boxH = dodgeBox.offsetHeight;
         const padding = 20;
 
-        const x = Math.max(padding, Math.min(data.x, window.innerWidth - boxW - padding));
-        const y = Math.max(padding, Math.min(data.y, window.innerHeight - boxH - padding));
+        const minX = padding;
+        const maxX = window.innerWidth - boxW - padding;
+        const minY = padding;
+        const maxY = window.innerHeight - boxH - padding;
+
+        const x = minX + data.x * (maxX - minX);
+        const y = minY + data.y * (maxY - minY);
 
         dodgeBox.style.left = x + "px";
         dodgeBox.style.top = y + "px";

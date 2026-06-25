@@ -203,14 +203,13 @@ introBtn.addEventListener("click", () => {
    De dot beweegt direct — de box op apparaat 1 volgt met delay.
    Sensitivity past het bereik aan op apparaat 1, niet de muissnelheid hier.
 ========================= */
-let targetX = 960;
-let targetY = 540;
-let currentX = 960;
-let currentY = 540;
+let targetX = 0.5;
+let targetY = 0.5;
+let currentX = 0.5;
+let currentY = 0.5;
 let lastSend = 0;
 
 function smoothLoop() {
-    // Vaste smoothing speed — delay blijft altijd hetzelfde
     const smoothSpeed = 0.08;
     currentX += (targetX - currentX) * smoothSpeed;
     currentY += (targetY - currentY) * smoothSpeed;
@@ -219,8 +218,8 @@ function smoothLoop() {
     if (now - lastSend > 50) {
         lastSend = now;
         set(ref(db, "game/boxPosition"), {
-            x: Math.round(currentX),
-            y: Math.round(currentY)
+            x: currentX,
+            y: currentY
         });
     }
 
@@ -262,18 +261,6 @@ function handleMove(clientX, clientY) {
     controllerDot.style.left = (fracX * 100) + "%";
     controllerDot.style.top = (fracY * 100) + "%";
 
-    // Sensitivity: bepaalt hoe het bereik wordt vergroot/verkleind
-    // Bij sens 1.0 = exacte mapping. Bij 2.0 = kleine beweging → grote sprong
-    // Maar de randen blijven altijd bereikbaar via clamp
-    const padding = 20;
-    const maxW = screenW - 400 - padding * 2;
-    const maxH = screenH - 300 - padding * 2;
-
-    // Pas sensitivity toe als versnelling vanuit midden,
-    // maar normalize zodat uiterste posities altijd 0 en maxW/maxH zijn
-    const sensX = Math.max(0, Math.min(1, 0.5 + (fracX - 0.5) * currentSensitivity));
-    const sensY = Math.max(0, Math.min(1, 0.5 + (fracY - 0.5) * currentSensitivity));
-
-    targetX = padding + sensX * maxW;
-    targetY = padding + sensY * maxH;
+    targetX = Math.max(0, Math.min(1, 0.5 + (fracX - 0.5) * currentSensitivity));
+    targetY = Math.max(0, Math.min(1, 0.5 + (fracY - 0.5) * currentSensitivity));
 }
