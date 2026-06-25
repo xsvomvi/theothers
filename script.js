@@ -314,16 +314,17 @@ function spawnObservers() {
     img.classList.add("observer");
 
     // Plaats overal behalve te veel in het midden (waar het filmpje speelt)
+    // en niet onderaan-midden (waar de 'continue' knop staat).
     let leftPct, topPct, attempts = 0;
     do {
         leftPct = Math.random() * 100;
         topPct = Math.random() * 100;
         attempts++;
-    } while (
-        leftPct > 28 && leftPct < 72 &&
-        topPct > 22 && topPct < 78 &&
-        attempts < 40
-    );
+
+        const inCenter = leftPct > 28 && leftPct < 72 && topPct > 22 && topPct < 78;
+        const inButton = leftPct > 25 && leftPct < 75 && topPct > 80;
+        var badSpot = inCenter || inButton;
+    } while (badSpot && attempts < 40);
 
     img.style.left = leftPct + "%";
     img.style.top = topPct + "%";
@@ -687,17 +688,24 @@ function getRandomPolaroidPosition() {
     const midY1 = H * 0.22;
     const midY2 = H * 0.78;
 
+    // Knop-zone onderaan-midden (de 'continue' knop) — hier omheen blijven.
+    const btnW = 320;
+    const btnH = 120;
+    const btnLeft = W / 2 - btnW / 2;
+    const btnRight = W / 2 + btnW / 2;
+    const btnTop = H - btnH - padding;
+
     let x, y, attempts = 0;
 
     do {
         x = padding + Math.random() * (W - pw - padding * 2);
         y = padding + Math.random() * (H - ph - padding * 2);
         attempts++;
-    } while (
-        x + pw > midX1 && x < midX2 &&
-        y + ph > midY1 && y < midY2 &&
-        attempts < 30
-    );
+
+        const inCenter = x + pw > midX1 && x < midX2 && y + ph > midY1 && y < midY2;
+        const inButton = x + pw > btnLeft && x < btnRight && y + ph > btnTop;
+        var badSpot = inCenter || inButton;
+    } while (badSpot && attempts < 40);
 
     return { x, y };
 }
