@@ -158,6 +158,26 @@ const TOTAL_ROUNDS = 6;
 let gameActive = false;
 let heartbeatStarted = false;
 
+/* =========================
+   JITTER PER RONDE
+   3 willekeurige rondes (van 6) krijgen extreme jitter, de rest normaal.
+   Volgorde verschilt per sessie.
+========================= */
+const extremeRounds = (() => {
+    const all = [0, 1, 2, 3, 4, 5];
+    for (let i = all.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [all[i], all[j]] = [all[j], all[i]];
+    }
+    return new Set(all.slice(0, 3));
+})();
+
+function updateJitterLevel(r) {
+    const level = extremeRounds.has(r) ? "extreme" : "normal";
+    set(ref(db, "game/jitterLevel"), level);
+    console.log(`Ronde ${r + 1} jitter: ${level}`);
+}
+
 /* SNAPSHOTS */
 window.snapshots = [];
 window.__controllerMessage = "";
@@ -376,6 +396,7 @@ function startActualGame() {
     round = 0;
 
     updateBoxSize();
+    updateJitterLevel(round);
 
     dodgeBox.style.left = (window.innerWidth / 2 - 100) + "px";
     dodgeBox.style.top = (window.innerHeight / 2 - 80) + "px";
@@ -405,6 +426,7 @@ function startRounds() {
         }
 
         updateBoxSize();
+        updateJitterLevel(round);
 
         let timeLeft = 7;
         timerEl.innerText = timeLeft;
@@ -498,6 +520,13 @@ function updateBoxSize() {
     const size = 24 + (44 - 24) * progress;
     dodgeBox.style.width = size + "vw";
     dodgeBox.style.height = (size * 0.65) + "vw";
+
+    // Publiceer de echte box-grootte als fractie van het scherm,
+    // zodat de controller exact hetzelfde frame kan tekenen.
+    set(ref(db, "game/boxSize"), {
+        w: dodgeBox.offsetWidth / window.innerWidth,
+        h: dodgeBox.offsetHeight / window.innerHeight
+    });
 }
 
 /* =========================

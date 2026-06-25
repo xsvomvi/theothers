@@ -85,7 +85,7 @@ const nameInput = document.getElementById("nameInput");
 const nameBtn = document.getElementById("nameBtn");
 const introBtn = document.getElementById("introBtn");
 const controllerArea = document.getElementById("controllerArea");
-const controllerDot = document.getElementById("controllerDot");
+const controllerBox = document.getElementById("controllerBox");
 const controllerInstruction = document.getElementById("controllerInstruction");
 
 /* =========================
@@ -100,6 +100,32 @@ onValue(ref(db, "game/screen"), (snapshot) => {
         screenW = data.w;
         screenH = data.h;
     }
+});
+
+/* =========================
+   BOX-GROOTTE VAN APPARAAT 1
+   Fractie van het scherm (breedte/hoogte). Verandert per ronde.
+========================= */
+let boxFracW = 0.24;
+let boxFracH = 0.20;
+
+onValue(ref(db, "game/boxSize"), (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+        boxFracW = data.w;
+        boxFracH = data.h;
+    }
+});
+
+/* =========================
+   JITTER-NIVEAU PER RONDE
+   "normal" = milde trilling, "extreme" = schiet echt ver weg.
+========================= */
+let jitterLevel = "normal";
+
+onValue(ref(db, "game/jitterLevel"), (snapshot) => {
+    const val = snapshot.val();
+    if (val) jitterLevel = val;
 });
 
 /* =========================
@@ -212,20 +238,32 @@ let lastIntensityChange = 0;
 function smoothLoop() {
     const now = Date.now();
 
+    const extreme = jitterLevel === "extreme";
+
+    // Bij extreme rondes: veel grotere uitslag en heftiger
+    const maxOffset = extreme ? 0.22 : 0.06; // hoe ver de box max kan afdwalen (fractie)
+    const velKick = extreme ? 0.032 : 0.012; // hoe hard de trilling per frame duwt
+
     // --- Intensiteit varieert over tijd: soms rustig, soms heftig ---
     if (now - lastIntensityChange > 1200 + Math.random() * 2000) {
         lastIntensityChange = now;
-        // Nieuw doel: meestal mild, af en toe een flinke uitschieter
-        shakeIntensityTarget = Math.random() < 0.3
-            ? 0.7 + Math.random() * 0.6   // heftige bui
-            : 0.15 + Math.random() * 0.45; // rustiger
+        if (extreme) {
+            // Bij extreem: bijna altijd flink, soms compleet wild
+            shakeIntensityTarget = Math.random() < 0.5
+                ? 1.1 + Math.random() * 0.7
+                : 0.6 + Math.random() * 0.5;
+        } else {
+            // Normaal: meestal mild, af en toe een uitschieter
+            shakeIntensityTarget = Math.random() < 0.3
+                ? 0.7 + Math.random() * 0.6
+                : 0.15 + Math.random() * 0.45;
+        }
     }
     shakeIntensity += (shakeIntensityTarget - shakeIntensity) * 0.02;
 
     // --- Trilling als gedempte random-walk (vloeiend, niet hoekig) ---
-    const maxOffset = 0.06; // hoe ver de box max kan afdwalen (fractie)
-    shakeVelX += (Math.random() - 0.5) * 0.012 * shakeIntensity;
-    shakeVelY += (Math.random() - 0.5) * 0.012 * shakeIntensity;
+    shakeVelX += (Math.random() - 0.5) * velKick * shakeIntensity;
+    shakeVelY += (Math.random() - 0.5) * velKick * shakeIntensity;
     shakeVelX *= 0.9;  // demping
     shakeVelY *= 0.9;
     shakeOffsetX += shakeVelX;
@@ -244,6 +282,9 @@ function smoothLoop() {
     currentX += (goalX - currentX) * smoothSpeed;
     currentY += (goalY - currentY) * smoothSpeed;
 
+    // Toon hetzelfde shaky frame op de controller
+    positionControllerBox(currentX, currentY);
+
     if (now - lastSend > 50) {
         lastSend = now;
         set(ref(db, "game/boxPosition"), {
@@ -253,6 +294,27 @@ function smoothLoop() {
     }
 
     requestAnimationFrame(smoothLoop);
+}
+
+/* =========================
+   CONTROLLER-FRAME TEKENEN
+   Zelfde mapping als op de experiencer: fractie 0-1 → top-left over het
+   geldige bereik (rekening houdend met de box-grootte).
+========================= */
+function positionControllerBox(fx, fy) {
+    const areaW = controllerArea.clientWidth;
+    const areaH = controllerArea.clientHeight;
+
+    const boxW = boxFracW * areaW;
+    const boxH = boxFracH * areaH;
+
+    const left = fx * (areaW - boxW);
+    const top = fy * (areaH - boxH);
+
+    controllerBox.style.width = boxW + "px";
+    controllerBox.style.height = boxH + "px";
+    controllerBox.style.left = left + "px";
+    controllerBox.style.top = top + "px";
 }
 
 smoothLoop();
@@ -284,10 +346,6 @@ function handleMove(clientX, clientY) {
     // Fractie 0-1 binnen het controller vlak
     const fracX = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     const fracY = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
-
-    // Dot beweegt direct en identiek
-    controllerDot.style.left = (fracX * 100) + "%";
-    controllerDot.style.top = (fracY * 100) + "%";
 
     targetX = fracX;
     targetY = fracY;
