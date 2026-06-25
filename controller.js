@@ -213,6 +213,21 @@ function showControllerEndScreen(data) {
 }
 
 /* =========================
+   FULLSCREEN BIJ EERSTE INTERACTIE
+   De controller gaat fullscreen zodra er voor het eerst ergens
+   (caption-veld of een knop) op wordt geklikt/getikt.
+========================= */
+function goFullscreen() {
+    if (document.fullscreenElement) return;
+    if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+    }
+}
+
+document.addEventListener("click", goFullscreen, { once: true });
+document.addEventListener("touchstart", goFullscreen, { once: true });
+
+/* =========================
    SUGGESTIES
 ========================= */
 document.querySelectorAll(".suggestion").forEach(btn => {
