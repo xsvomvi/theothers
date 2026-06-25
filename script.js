@@ -18,32 +18,6 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 /* =========================
-   SENSITIVITY PER RONDE
-   6 rondes, allemaal anders, gerandomized volgorde per sessie.
-   Waarden: 0.15 (extreem traag), 0.4 (traag), 0.85 (normaal),
-            1.3 (normaal snel), 2.2 (snel), 3.8 (extreem snel)
-========================= */
-const sensitivityValues = [0.15, 0.4, 0.85, 1.3, 2.2, 3.8];
-
-function shuffleArray(arr) {
-    const a = [...arr];
-    for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-}
-
-// Gerandomized volgorde per sessie
-const sensitivityOrder = shuffleArray(sensitivityValues);
-
-function updateSensitivity(round) {
-    const sens = sensitivityOrder[round] ?? 1.0;
-    set(ref(db, "game/sensitivity"), sens);
-    console.log(`Ronde ${round + 1} sensitivity: ${sens}`);
-}
-
-/* =========================
    WEBRTC
 ========================= */
 let peerConnection = null;
@@ -149,7 +123,6 @@ function resetFirebase() {
         w: window.innerWidth,
         h: window.innerHeight
     });
-    set(ref(db, "game/sensitivity"), 1.0);
 }
 
 /* =========================
@@ -403,7 +376,6 @@ function startActualGame() {
     round = 0;
 
     updateBoxSize();
-    updateSensitivity(round);
 
     dodgeBox.style.left = (window.innerWidth / 2 - 100) + "px";
     dodgeBox.style.top = (window.innerHeight / 2 - 80) + "px";
@@ -433,7 +405,6 @@ function startRounds() {
         }
 
         updateBoxSize();
-        updateSensitivity(round);
 
         let timeLeft = 7;
         timerEl.innerText = timeLeft;

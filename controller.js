@@ -103,19 +103,6 @@ onValue(ref(db, "game/screen"), (snapshot) => {
 });
 
 /* =========================
-   SENSITIVITY SYNC
-   De sensitivity bepaalt hoe groot het bereik is op het scherm van apparaat 1.
-   De muis op de controller beweegt altijd even snel — alleen het effect op
-   apparaat 1 verandert.
-========================= */
-let currentSensitivity = 1.0;
-
-onValue(ref(db, "game/sensitivity"), (snapshot) => {
-    const val = snapshot.val();
-    if (val !== null) currentSensitivity = val;
-});
-
-/* =========================
    SUGGESTIES
 ========================= */
 document.querySelectorAll(".suggestion").forEach(btn => {
@@ -199,22 +186,64 @@ introBtn.addEventListener("click", () => {
 });
 
 /* =========================
-   SMOOTH BEWEGING
-   De dot beweegt direct — de box op apparaat 1 volgt met delay.
-   Sensitivity past het bereik aan op apparaat 1, niet de muissnelheid hier.
+   SMOOTH BEWEGING + DRONKEN TRILLING
+   De experiencer stuurt 1-op-1 (geen sensitivity), maar het vierkantje
+   krijgt een onstabiele "dronken" trilling die in intensiteit varieert:
+   soms rustig, soms heftig. De experiencer moet continu bijsturen om het
+   shot gecentreerd te houden.
 ========================= */
-let targetX = 0.5;
+let targetX = 0.5;   // gewenste positie (volgt de muis, fractie 0-1)
 let targetY = 0.5;
-let currentX = 0.5;
+let currentX = 0.5;  // verzonden positie (= doel + trilling)
 let currentY = 0.5;
 let lastSend = 0;
 
-function smoothLoop() {
-    const smoothSpeed = 0.08;
-    currentX += (targetX - currentX) * smoothSpeed;
-    currentY += (targetY - currentY) * smoothSpeed;
+// Trilling-state: een zachte random-walk offset bovenop het doel
+let shakeOffsetX = 0;
+let shakeOffsetY = 0;
+let shakeVelX = 0;
+let shakeVelY = 0;
 
+// Intensiteit-envelope: wandelt langzaam tussen rustig en heftig
+let shakeIntensity = 0.4;
+let shakeIntensityTarget = 0.4;
+let lastIntensityChange = 0;
+
+function smoothLoop() {
     const now = Date.now();
+
+    // --- Intensiteit varieert over tijd: soms rustig, soms heftig ---
+    if (now - lastIntensityChange > 1200 + Math.random() * 2000) {
+        lastIntensityChange = now;
+        // Nieuw doel: meestal mild, af en toe een flinke uitschieter
+        shakeIntensityTarget = Math.random() < 0.3
+            ? 0.7 + Math.random() * 0.6   // heftige bui
+            : 0.15 + Math.random() * 0.45; // rustiger
+    }
+    shakeIntensity += (shakeIntensityTarget - shakeIntensity) * 0.02;
+
+    // --- Trilling als gedempte random-walk (vloeiend, niet hoekig) ---
+    const maxOffset = 0.06; // hoe ver de box max kan afdwalen (fractie)
+    shakeVelX += (Math.random() - 0.5) * 0.012 * shakeIntensity;
+    shakeVelY += (Math.random() - 0.5) * 0.012 * shakeIntensity;
+    shakeVelX *= 0.9;  // demping
+    shakeVelY *= 0.9;
+    shakeOffsetX += shakeVelX;
+    shakeOffsetY += shakeVelY;
+    // Trek de offset zacht terug naar 0, zodat hij blijft "rond het doel"
+    shakeOffsetX *= 0.96;
+    shakeOffsetY *= 0.96;
+    shakeOffsetX = Math.max(-maxOffset, Math.min(maxOffset, shakeOffsetX));
+    shakeOffsetY = Math.max(-maxOffset, Math.min(maxOffset, shakeOffsetY));
+
+    // --- Doel + trilling, daarna smoothing en clamp ---
+    const goalX = Math.max(0, Math.min(1, targetX + shakeOffsetX));
+    const goalY = Math.max(0, Math.min(1, targetY + shakeOffsetY));
+
+    const smoothSpeed = 0.18;
+    currentX += (goalX - currentX) * smoothSpeed;
+    currentY += (goalY - currentY) * smoothSpeed;
+
     if (now - lastSend > 50) {
         lastSend = now;
         set(ref(db, "game/boxPosition"), {
@@ -246,9 +275,8 @@ controllerArea.addEventListener("touchmove", (e) => {
 
 /* =========================
    POSITIE BEREKENEN
-   Sensitivity schaalt het bereik op apparaat 1:
-   hoog = kleine muisbeweging → grote beweging op apparaat 1 (moeilijk voor experiencer)
-   laag = grote muisbeweging → kleine beweging op apparaat 1 (makkelijk voor experiencer)
+   Directe 1-op-1 mapping: muis links = box links, muis rechts = box rechts.
+   De moeilijkheid komt niet van sensitivity maar van de trilling in smoothLoop.
 ========================= */
 function handleMove(clientX, clientY) {
     const rect = controllerArea.getBoundingClientRect();
@@ -261,6 +289,6 @@ function handleMove(clientX, clientY) {
     controllerDot.style.left = (fracX * 100) + "%";
     controllerDot.style.top = (fracY * 100) + "%";
 
-    targetX = Math.max(0, Math.min(1, 0.5 + (fracX - 0.5) * currentSensitivity));
-    targetY = Math.max(0, Math.min(1, 0.5 + (fracY - 0.5) * currentSensitivity));
+    targetX = fracX;
+    targetY = fracY;
 }
