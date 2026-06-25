@@ -292,7 +292,7 @@ function smoothLoop() {
     // Toon hetzelfde shaky frame op de controller
     positionControllerBox(currentX, currentY);
 
-    if (now - lastSend > 50) {
+    if (now - lastSend > 40) {
         lastSend = now;
         set(ref(db, "game/boxPosition"), {
             x: currentX,

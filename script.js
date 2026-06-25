@@ -517,7 +517,8 @@ function snapshotSequence() {
 ========================= */
 function updateBoxSize() {
     const progress = round / (TOTAL_ROUNDS - 1);
-    const size = 24 + (44 - 24) * progress;
+    // Begint groot en wordt elke ronde flink kleiner (moeilijker).
+    const size = 50 - (50 - 10) * progress;
     dodgeBox.style.width = size + "vw";
     dodgeBox.style.height = (size * 0.65) + "vw";
 
