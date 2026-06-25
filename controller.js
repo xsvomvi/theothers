@@ -118,14 +118,36 @@ onValue(ref(db, "game/boxSize"), (snapshot) => {
 });
 
 /* =========================
-   JITTER-NIVEAU PER RONDE
-   "normal" = milde trilling, "extreme" = schiet echt ver weg.
+   JITTER-PROFIEL PER RONDE
+   6 verschillende profielen, gevarieerd in VERTE (maxOffset / pull) en
+   SNELHEID (velKick / damp / smooth). Elke ronde een ander profiel.
+
+   maxOffset = hoe ver de box max van het doel kan afdwalen (fractie scherm)
+   velKick   = hoe hard elke frame duwt (meer = sneller/twitchy)
+   damp      = demping van de snelheid (lager = schokkeriger)
+   pull      = terugtrekking naar het doel (dichter bij 1 = dwaalt verder weg)
+   smooth    = hoe snel de box de trilling volgt (lager = trager/zwaarder)
+   intMin/intMax = bereik van de intensiteit-golf
+   changeMin/changeVar = hoe vaak de intensiteit van karakter wisselt (ms)
 ========================= */
-let jitterLevel = "normal";
+const JITTER_PROFILES = {
+    // --- 3 mildere / rustigere ---
+    calm:   { maxOffset: 0.05, velKick: 0.010, damp: 0.90, pull: 0.965, smooth: 0.15, intMin: 0.15, intMax: 0.55, changeMin: 1500, changeVar: 2500 },
+    tipsy:  { maxOffset: 0.09, velKick: 0.014, damp: 0.90, pull: 0.960, smooth: 0.18, intMin: 0.30, intMax: 0.90, changeMin: 1200, changeVar: 2000 },
+    wander: { maxOffset: 0.20, velKick: 0.012, damp: 0.92, pull: 0.986, smooth: 0.10, intMin: 0.40, intMax: 1.00, changeMin: 1800, changeVar: 2500 },
+
+    // --- 3 extremere ---
+    snappy: { maxOffset: 0.18, velKick: 0.055, damp: 0.85, pull: 0.945, smooth: 0.30, intMin: 0.60, intMax: 1.30, changeMin: 600,  changeVar: 1100 },
+    extreme:{ maxOffset: 0.40, velKick: 0.040, damp: 0.90, pull: 0.958, smooth: 0.22, intMin: 0.80, intMax: 1.60, changeMin: 900,  changeVar: 1600 },
+    // MEGA EXTREEM: schiet super ver, grote trage uithalen naar de randen
+    mega:   { maxOffset: 0.62, velKick: 0.030, damp: 0.93, pull: 0.994, smooth: 0.13, intMin: 0.90, intMax: 1.90, changeMin: 1400, changeVar: 2200 }
+};
+
+let jitterProfile = "tipsy";
 
 onValue(ref(db, "game/jitterLevel"), (snapshot) => {
     const val = snapshot.val();
-    if (val) jitterLevel = val;
+    if (val && JITTER_PROFILES[val]) jitterProfile = val;
 });
 
 /* =========================
@@ -238,49 +260,34 @@ let lastIntensityChange = 0;
 function smoothLoop() {
     const now = Date.now();
 
-    const extreme = jitterLevel === "extreme";
-
-    // Bij extreme rondes: veel grotere uitslag en heftiger
-    const maxOffset = extreme ? 0.22 : 0.06; // hoe ver de box max kan afdwalen (fractie)
-    const velKick = extreme ? 0.032 : 0.012; // hoe hard de trilling per frame duwt
+    const p = JITTER_PROFILES[jitterProfile] || JITTER_PROFILES.tipsy;
 
     // --- Intensiteit varieert over tijd: soms rustig, soms heftig ---
-    if (now - lastIntensityChange > 1200 + Math.random() * 2000) {
+    if (now - lastIntensityChange > p.changeMin + Math.random() * p.changeVar) {
         lastIntensityChange = now;
-        if (extreme) {
-            // Bij extreem: bijna altijd flink, soms compleet wild
-            shakeIntensityTarget = Math.random() < 0.5
-                ? 1.1 + Math.random() * 0.7
-                : 0.6 + Math.random() * 0.5;
-        } else {
-            // Normaal: meestal mild, af en toe een uitschieter
-            shakeIntensityTarget = Math.random() < 0.3
-                ? 0.7 + Math.random() * 0.6
-                : 0.15 + Math.random() * 0.45;
-        }
+        shakeIntensityTarget = p.intMin + Math.random() * (p.intMax - p.intMin);
     }
     shakeIntensity += (shakeIntensityTarget - shakeIntensity) * 0.02;
 
     // --- Trilling als gedempte random-walk (vloeiend, niet hoekig) ---
-    shakeVelX += (Math.random() - 0.5) * velKick * shakeIntensity;
-    shakeVelY += (Math.random() - 0.5) * velKick * shakeIntensity;
-    shakeVelX *= 0.9;  // demping
-    shakeVelY *= 0.9;
+    shakeVelX += (Math.random() - 0.5) * p.velKick * shakeIntensity;
+    shakeVelY += (Math.random() - 0.5) * p.velKick * shakeIntensity;
+    shakeVelX *= p.damp;
+    shakeVelY *= p.damp;
     shakeOffsetX += shakeVelX;
     shakeOffsetY += shakeVelY;
-    // Trek de offset zacht terug naar 0, zodat hij blijft "rond het doel"
-    shakeOffsetX *= 0.96;
-    shakeOffsetY *= 0.96;
-    shakeOffsetX = Math.max(-maxOffset, Math.min(maxOffset, shakeOffsetX));
-    shakeOffsetY = Math.max(-maxOffset, Math.min(maxOffset, shakeOffsetY));
+    // Trek de offset terug naar 0; dichter bij 1 = dwaalt verder weg
+    shakeOffsetX *= p.pull;
+    shakeOffsetY *= p.pull;
+    shakeOffsetX = Math.max(-p.maxOffset, Math.min(p.maxOffset, shakeOffsetX));
+    shakeOffsetY = Math.max(-p.maxOffset, Math.min(p.maxOffset, shakeOffsetY));
 
     // --- Doel + trilling, daarna smoothing en clamp ---
     const goalX = Math.max(0, Math.min(1, targetX + shakeOffsetX));
     const goalY = Math.max(0, Math.min(1, targetY + shakeOffsetY));
 
-    const smoothSpeed = 0.18;
-    currentX += (goalX - currentX) * smoothSpeed;
-    currentY += (goalY - currentY) * smoothSpeed;
+    currentX += (goalX - currentX) * p.smooth;
+    currentY += (goalY - currentY) * p.smooth;
 
     // Toon hetzelfde shaky frame op de controller
     positionControllerBox(currentX, currentY);

@@ -160,22 +160,22 @@ let heartbeatStarted = false;
 
 /* =========================
    JITTER PER RONDE
-   3 willekeurige rondes (van 6) krijgen extreme jitter, de rest normaal.
-   Volgorde verschilt per sessie.
+   6 verschillende profielen (3 milder, 3 extremer waarvan 1 MEGA EXTREEM),
+   elke ronde een ander. Volgorde verschilt per sessie.
 ========================= */
-const extremeRounds = (() => {
-    const all = [0, 1, 2, 3, 4, 5];
-    for (let i = all.length - 1; i > 0; i--) {
+const jitterProfileOrder = (() => {
+    const profiles = ["calm", "tipsy", "wander", "snappy", "extreme", "mega"];
+    for (let i = profiles.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [all[i], all[j]] = [all[j], all[i]];
+        [profiles[i], profiles[j]] = [profiles[j], profiles[i]];
     }
-    return new Set(all.slice(0, 3));
+    return profiles;
 })();
 
 function updateJitterLevel(r) {
-    const level = extremeRounds.has(r) ? "extreme" : "normal";
-    set(ref(db, "game/jitterLevel"), level);
-    console.log(`Ronde ${r + 1} jitter: ${level}`);
+    const profile = jitterProfileOrder[r] ?? "tipsy";
+    set(ref(db, "game/jitterLevel"), profile);
+    console.log(`Ronde ${r + 1} jitter: ${profile}`);
 }
 
 /* SNAPSHOTS */
