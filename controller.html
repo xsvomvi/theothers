@@ -11,7 +11,7 @@
 
 <!-- STAP 1: CAPTION -->
 <div id="messageScreen">
-    <p id="messagePrompt">you're about to take some photos of someone (a short minigame).<br>but first, choose or write a caption for their pictures —<br>something genuine. something fun. something sweet. something about them.<br><span id="messageHint">they'll read this. make it count.</span></p>
+    <p id="messagePrompt">you're about to take some photos of the other person (short minigame).<br>but first, choose or write your own caption for their pictures —<br>something genuine. something fun. something sweet. something about them.<br><span id="messageHint">they'll read this. make it count.</span></p>
     
     <input type="text" id="messageInput" maxlength="80" placeholder="write your own caption...">
 
@@ -64,7 +64,14 @@
 
 <!-- STAP 6: KLAAR -->
 <div id="doneScreen" class="hidden">
-    <p id="doneText">shot taken.<br>they'll see it soon.</p>
+    <p id="doneText">shots taken.<br>they'll see it soon.<br>waiting for them to finish...</p>
+</div>
+
+<!-- STAP 7: ZELFDE EINDSCHERM ALS DE EXPERIENCER -->
+<div id="endScreen" class="hidden">
+    <div id="endPolaroids"></div>
+    <p id="endText"></p>
+    <p id="endCredit"></p>
 </div>
 
 <script type="module" src="controller.js"></script>

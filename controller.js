@@ -78,6 +78,10 @@ const introScreen = document.getElementById("introScreen");
 const waitScreen = document.getElementById("waitScreen");
 const controllerScreen = document.getElementById("controllerScreen");
 const doneScreen = document.getElementById("doneScreen");
+const endScreen = document.getElementById("endScreen");
+const endPolaroids = document.getElementById("endPolaroids");
+const endText = document.getElementById("endText");
+const endCredit = document.getElementById("endCredit");
 
 const messageInput = document.getElementById("messageInput");
 const messageBtn = document.getElementById("messageBtn");
@@ -138,9 +142,9 @@ const JITTER_PROFILES = {
 
     // --- 3 extremere ---
     snappy: { maxOffset: 0.18, velKick: 0.055, damp: 0.85, pull: 0.945, smooth: 0.30, intMin: 0.60, intMax: 1.30, changeMin: 600,  changeVar: 1100 },
-    extreme:{ maxOffset: 0.40, velKick: 0.040, damp: 0.90, pull: 0.958, smooth: 0.22, intMin: 0.80, intMax: 1.60, changeMin: 900,  changeVar: 1600 },
-    // MEGA EXTREEM: schiet super ver, grote trage uithalen naar de randen
-    mega:   { maxOffset: 0.62, velKick: 0.030, damp: 0.93, pull: 0.994, smooth: 0.13, intMin: 0.90, intMax: 1.90, changeMin: 1400, changeVar: 2200 }
+    extreme:{ maxOffset: 0.30, velKick: 0.038, damp: 0.90, pull: 0.952, smooth: 0.22, intMin: 0.70, intMax: 1.30, changeMin: 900,  changeVar: 1600 },
+    // MEGA EXTREEM: schiet ver, grote trage uithalen — maar iets rustiger dan eerst
+    mega:   { maxOffset: 0.46, velKick: 0.028, damp: 0.93, pull: 0.990, smooth: 0.13, intMin: 0.80, intMax: 1.55, changeMin: 1400, changeVar: 2200 }
 };
 
 let jitterProfile = "tipsy";
@@ -149,6 +153,64 @@ onValue(ref(db, "game/jitterLevel"), (snapshot) => {
     const val = snapshot.val();
     if (val && JITTER_PROFILES[val]) jitterProfile = val;
 });
+
+/* =========================
+   EINDSCHERM SYNC
+   Wanneer de experiencer de polaroids met caption + naam toont,
+   krijgt de controller exact hetzelfde beeld.
+========================= */
+let endScreenShown = false;
+
+onValue(ref(db, "game/endScreen"), (snapshot) => {
+    const data = snapshot.val();
+    if (!data || !data.snapshots || endScreenShown) return;
+    endScreenShown = true;
+    showControllerEndScreen(data);
+});
+
+function showControllerEndScreen(data) {
+    const snaps = Array.isArray(data.snapshots)
+        ? data.snapshots
+        : Object.values(data.snapshots);
+    const caption = data.caption || "you are seen by the others.";
+    const name = data.name || "the others";
+
+    controllerScreen.classList.add("hidden");
+    doneScreen.classList.add("hidden");
+
+    endScreen.classList.remove("hidden");
+    endScreen.style.backgroundColor = "black";
+
+    endPolaroids.innerHTML = "";
+    snaps.forEach((dataURL, i) => {
+        const el = document.createElement("div");
+        el.classList.add("polaroid");
+
+        const img = document.createElement("img");
+        img.src = dataURL;
+        el.appendChild(img);
+
+        const rot = (Math.random() * 10 - 5).toFixed(1);
+        el.style.setProperty("--rot", rot + "deg");
+        el.style.animationDelay = (i * 0.15) + "s";
+
+        endPolaroids.appendChild(el);
+    });
+
+    setTimeout(() => {
+        endScreen.style.backgroundColor = "white";
+    }, 100);
+
+    setTimeout(() => {
+        endText.innerText = caption;
+        endText.style.color = "black";
+        endText.style.opacity = "1";
+
+        endCredit.innerText = `from one of the others, ${name}.`;
+        endCredit.style.color = "black";
+        endCredit.style.opacity = "1";
+    }, 2500);
+}
 
 /* =========================
    SUGGESTIES

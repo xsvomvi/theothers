@@ -123,6 +123,7 @@ function resetFirebase() {
         w: window.innerWidth,
         h: window.innerHeight
     });
+    set(ref(db, "game/endScreen"), null);
 }
 
 /* =========================
@@ -518,7 +519,7 @@ function snapshotSequence() {
 function updateBoxSize() {
     const progress = round / (TOTAL_ROUNDS - 1);
     // Begint groot en wordt elke ronde flink kleiner (moeilijker).
-    const size = 50 - (50 - 10) * progress;
+    const size = 45 - (45 - 10) * progress;
     dodgeBox.style.width = size + "vw";
     dodgeBox.style.height = (size * 0.65) + "vw";
 
@@ -766,6 +767,13 @@ function showEndScreen() {
 
     const caption = window.__controllerMessage || "you are seen by the others.";
     const name = window.__photographerName || "the others";
+
+    // Stuur exact hetzelfde beeld naar de controller
+    set(ref(db, "game/endScreen"), {
+        snapshots: window.snapshots,
+        caption,
+        name
+    });
 
     setTimeout(() => {
         endScreen.style.backgroundColor = "white";
