@@ -312,8 +312,21 @@ function spawnObservers() {
     const img = document.createElement("img");
     img.src = "images/observers.png";
     img.classList.add("observer");
-    img.style.left = Math.random() * 100 + "%";
-    img.style.top = Math.random() * 100 + "%";
+
+    // Plaats overal behalve te veel in het midden (waar het filmpje speelt)
+    let leftPct, topPct, attempts = 0;
+    do {
+        leftPct = Math.random() * 100;
+        topPct = Math.random() * 100;
+        attempts++;
+    } while (
+        leftPct > 28 && leftPct < 72 &&
+        topPct > 22 && topPct < 78 &&
+        attempts < 40
+    );
+
+    img.style.left = leftPct + "%";
+    img.style.top = topPct + "%";
     overlay.appendChild(img);
 }
 

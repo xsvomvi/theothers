@@ -88,6 +88,7 @@ const messageBtn = document.getElementById("messageBtn");
 const nameInput = document.getElementById("nameInput");
 const nameBtn = document.getElementById("nameBtn");
 const introBtn = document.getElementById("introBtn");
+const controllerWrapper = document.getElementById("controllerWrapper");
 const controllerArea = document.getElementById("controllerArea");
 const controllerBox = document.getElementById("controllerBox");
 const controllerInstruction = document.getElementById("controllerInstruction");
@@ -103,8 +104,35 @@ onValue(ref(db, "game/screen"), (snapshot) => {
     if (data) {
         screenW = data.w;
         screenH = data.h;
+        sizeControllerWrapper();
     }
 });
+
+/* =========================
+   CONTROLLER-VENSTER ZO GROOT MOGELIJK MAKEN
+   Houdt exact dezelfde verhouding als het experiencer-scherm aan,
+   zodat het webcam-beeld (object-fit: cover) identiek wordt bijgesneden.
+========================= */
+function sizeControllerWrapper() {
+    if (!controllerWrapper) return;
+
+    const aspect = screenW / screenH;
+    const maxW = window.innerWidth * 0.94;
+    const maxH = window.innerHeight * 0.74; // ruimte voor de instructietekst
+
+    let w = maxW;
+    let h = w / aspect;
+    if (h > maxH) {
+        h = maxH;
+        w = h * aspect;
+    }
+
+    controllerWrapper.style.width = w + "px";
+    controllerWrapper.style.height = h + "px";
+}
+
+window.addEventListener("resize", sizeControllerWrapper);
+sizeControllerWrapper();
 
 /* =========================
    BOX-GROOTTE VAN APPARAAT 1
