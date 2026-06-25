@@ -142,9 +142,9 @@ const JITTER_PROFILES = {
 
     // --- 3 extremere ---
     snappy: { maxOffset: 0.18, velKick: 0.055, damp: 0.85, pull: 0.945, smooth: 0.30, intMin: 0.60, intMax: 1.30, changeMin: 600,  changeVar: 1100 },
-    extreme:{ maxOffset: 0.30, velKick: 0.038, damp: 0.90, pull: 0.952, smooth: 0.22, intMin: 0.70, intMax: 1.30, changeMin: 900,  changeVar: 1600 },
-    // MEGA EXTREEM: schiet ver, grote trage uithalen — maar iets rustiger dan eerst
-    mega:   { maxOffset: 0.46, velKick: 0.028, damp: 0.93, pull: 0.990, smooth: 0.13, intMin: 0.80, intMax: 1.55, changeMin: 1400, changeVar: 2200 }
+    extreme:{ maxOffset: 0.24, velKick: 0.030, damp: 0.90, pull: 0.948, smooth: 0.24, intMin: 0.55, intMax: 1.10, changeMin: 900,  changeVar: 1600 },
+    // DE uitschieter: schiet ver naar de rand, maar traag/voorspelbaar = nog te doen
+    mega:   { maxOffset: 0.37, velKick: 0.024, damp: 0.93, pull: 0.991, smooth: 0.14, intMin: 0.70, intMax: 1.40, changeMin: 1500, changeVar: 2400 }
 };
 
 let jitterProfile = "tipsy";
